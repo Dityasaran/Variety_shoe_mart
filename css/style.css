@@ -427,6 +427,64 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
 .toast.error   { border-left: 4px solid var(--red); }
 .toast.info    { border-left: 4px solid var(--blue); }
 
+/* ── Multi-pair transaction form ─────────────────────────── */
+.txn-header-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pair-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px 14px;
+  margin-bottom: 16px;
+  transition: border-color var(--transition);
+  position: relative;
+}
+.pair-section:hover {
+  border-color: rgba(255,107,43,.35);
+}
+.pair-section::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+}
+
+.pair-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.pair-section-label {
+  font-size: .8rem; font-weight: 700;
+  color: var(--accent); letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.pair-calc {
+  margin-top: 12px !important;
+  padding: 12px 14px !important;
+  background: rgba(255,107,43,.03) !important;
+}
+
+.txn-summary {
+  background: linear-gradient(135deg, rgba(255,107,43,.08), rgba(245,158,11,.05));
+  border: 1px solid rgba(255,107,43,.25);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin: 4px 0 20px;
+}
+.txn-summary-title {
+  font-size: .82rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 12px;
+}
+
 /* ── Sidebar overlay ──────────────────────────────────────── */
 .sidebar-overlay {
   display: none; position: fixed; inset: 0;

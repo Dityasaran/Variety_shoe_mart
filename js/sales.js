@@ -1,6 +1,6 @@
 // ============================================================
-// js/sales.js — Sales Management Module
-// Columns (0-indexed):
+// js/sales.js — Sales Management Module  (multi-pair transaction)
+// Columns (0-indexed) in Product_sales sheet:
 //   0=Date  1=Time  2=Brand  3=Article  4=Size  5=Category
 //   6=Type  7=ShoeStyle  8=Color  9=PairsInTransaction
 //   10=QtySold  11=CostPrice  12=MRP  13=SellingPrice
@@ -12,12 +12,12 @@ const Sales = (() => {
   let allRows   = [];
   let editIndex = null;
 
-  const CATS       = ['Men', 'Women', 'Kids'];
-  const TYPES      = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops'];
+  const CATS        = ['Men', 'Women', 'Kids'];
+  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops'];
   const SHOE_STYLES = ['Lace', 'Laceless'];
-  const inr        = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
-  // ── Render ────────────────────────────────────────────────
+  // ── Render page ───────────────────────────────────────────
   function render(rows) {
     allRows = rows;
     const container = document.getElementById('view-container');
@@ -31,8 +31,9 @@ const Sales = (() => {
       <div class="form-card" id="sale-form-card" style="display:none">
         <div class="form-card-title" id="sale-form-title">🛒 Record a Sale</div>
         <form id="sale-form" novalidate>
-          <div class="form-grid">
 
+          <!-- ── Transaction-level header ── -->
+          <div class="txn-header-grid">
             <div class="form-group">
               <label for="sl-date">Date of Sale *</label>
               <input type="date" id="sl-date" required />
@@ -42,89 +43,37 @@ const Sales = (() => {
               <input type="time" id="sl-time" required />
             </div>
             <div class="form-group">
-              <label for="sl-brand">Brand Name *</label>
-              <input type="text" id="sl-brand" placeholder="e.g. Bata, Sparx, Campus" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-article">Article / Model *</label>
-              <input type="text" id="sl-article" placeholder="Model name" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-size">Size *</label>
-              <input type="number" id="sl-size" placeholder="6–12" min="1" max="15" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-category">Category *</label>
-              <select id="sl-category" required>
-                <option value="">Select category</option>
-                ${CATS.map(c => `<option>${c}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="sl-type">Type *</label>
-              <select id="sl-type" required>
-                <option value="">Select type</option>
-                ${TYPES.map(t => `<option>${t}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group" id="sl-shoestyle-group" style="display:none">
-              <label for="sl-shoestyle">Shoe Style *</label>
-              <select id="sl-shoestyle">
-                <option value="">Select style</option>
-                ${SHOE_STYLES.map(s => `<option>${s}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="sl-color">Color *</label>
-              <input type="text" id="sl-color" placeholder="e.g. Black, Navy Blue, Red" required />
-            </div>
-            <div class="form-group">
               <label for="sl-pairs-txn">No. of Pairs in This Transaction *</label>
               <select id="sl-pairs-txn" required>
-                <option value="">How many different pairs bought?</option>
+                <option value="">How many different pairs?</option>
                 ${[1,2,3,4,5,6,7].map(n => `<option value="${n}">${n} pair${n > 1 ? 's' : ''}</option>`).join('')}
               </select>
             </div>
-            <div class="form-group">
-              <label for="sl-qty">Qty Sold (this item) *</label>
-              <input type="number" id="sl-qty" placeholder="1" min="1" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-cost">Cost Price / pair (₹) *</label>
-              <input type="number" id="sl-cost" placeholder="0.00" min="0" step="0.01" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-mrp">MRP / pair (₹) *</label>
-              <input type="number" id="sl-mrp" placeholder="0.00" min="0" step="0.01" required />
-            </div>
-            <div class="form-group">
-              <label for="sl-sell">Selling Price / pair (₹) *</label>
-              <input type="number" id="sl-sell" placeholder="0.00" min="0" step="0.01" required />
-            </div>
-
           </div>
 
-          <!-- Auto-calculated fields -->
-          <div class="calc-grid">
-            <div class="calc-item">
-              <div class="calc-label">Total Sale Amount</div>
-              <div class="calc-value" id="c-total-sale">₹0</div>
-            </div>
-            <div class="calc-item">
-              <div class="calc-label">Total Cost</div>
-              <div class="calc-value" id="c-total-cost">₹0</div>
-            </div>
-            <div class="calc-item">
-              <div class="calc-label">Profit / Pair</div>
-              <div class="calc-value" id="c-profit-pair">₹0</div>
-            </div>
-            <div class="calc-item">
-              <div class="calc-label">Total Profit</div>
-              <div class="calc-value" id="c-total-profit">₹0</div>
-            </div>
-            <div class="calc-item">
-              <div class="calc-label">Discount Given</div>
-              <div class="calc-value" id="c-discount">₹0</div>
+          <!-- ── Dynamic pair sections injected here ── -->
+          <div id="pairs-container"></div>
+
+          <!-- ── Transaction total summary ── -->
+          <div class="txn-summary" id="txn-summary" style="display:none">
+            <div class="txn-summary-title">📊 Transaction Summary</div>
+            <div class="calc-grid">
+              <div class="calc-item">
+                <div class="calc-label">Total Sale Amount</div>
+                <div class="calc-value" id="txn-total-sale">₹0</div>
+              </div>
+              <div class="calc-item">
+                <div class="calc-label">Total Cost</div>
+                <div class="calc-value" id="txn-total-cost">₹0</div>
+              </div>
+              <div class="calc-item">
+                <div class="calc-label">Total Profit</div>
+                <div class="calc-value" id="txn-total-profit">₹0</div>
+              </div>
+              <div class="calc-item">
+                <div class="calc-label">Total Discount Given</div>
+                <div class="calc-value" id="txn-total-discount">₹0</div>
+              </div>
             </div>
           </div>
 
@@ -176,20 +125,14 @@ const Sales = (() => {
     document.getElementById('sl-date').value = now.toISOString().slice(0, 10);
     document.getElementById('sl-time').value = now.toTimeString().slice(0, 5);
 
-    // Conditional Shoe Style
-    document.getElementById('sl-type').addEventListener('change', function () {
-      const sg = document.getElementById('sl-shoestyle-group');
-      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-      if (this.value !== 'Shoe') document.getElementById('sl-shoestyle').value = '';
+    // When pairs count changes → rebuild pair sections
+    document.getElementById('sl-pairs-txn').addEventListener('change', function () {
+      buildPairSections(Number(this.value) || 0);
     });
 
     document.getElementById('toggle-sale-btn').addEventListener('click', () => { editIndex = null; showForm(true); });
     document.getElementById('sale-cancel-btn').addEventListener('click', () => showForm(false));
     document.getElementById('sale-form').addEventListener('submit', handleSubmit);
-
-    ['sl-qty','sl-cost','sl-mrp','sl-sell'].forEach(id =>
-      document.getElementById(id).addEventListener('input', updateCalc)
-    );
 
     document.getElementById('ff-search').addEventListener('input', renderTable);
     document.getElementById('ff-category').addEventListener('change', renderTable);
@@ -200,11 +143,131 @@ const Sales = (() => {
     renderTable();
   }
 
-  function updateCalc() {
-    const qty  = Number(document.getElementById('sl-qty')?.value)  || 0;
-    const cost = Number(document.getElementById('sl-cost')?.value) || 0;
-    const mrp  = Number(document.getElementById('sl-mrp')?.value)  || 0;
-    const sell = Number(document.getElementById('sl-sell')?.value) || 0;
+  // ── Build N pair entry blocks ─────────────────────────────
+  function buildPairSections(n) {
+    const container = document.getElementById('pairs-container');
+    const summary   = document.getElementById('txn-summary');
+
+    if (!n) {
+      container.innerHTML = '';
+      summary.style.display = 'none';
+      return;
+    }
+
+    container.innerHTML = Array.from({ length: n }, (_, i) => pairSectionHTML(i, n)).join('');
+    summary.style.display = n > 1 ? 'block' : 'none';
+
+    // Attach listeners for each pair
+    for (let i = 0; i < n; i++) {
+      // Show/hide shoe-style depending on type
+      document.getElementById(`sl-type-${i}`).addEventListener('change', function () {
+        const sg = document.getElementById(`sl-shoestyle-group-${i}`);
+        sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
+        if (this.value !== 'Shoe') document.getElementById(`sl-shoestyle-${i}`).value = '';
+      });
+
+      // Recalculate on any price/qty input
+      [`sl-qty-${i}`, `sl-cost-${i}`, `sl-mrp-${i}`, `sl-sell-${i}`].forEach(id =>
+        document.getElementById(id).addEventListener('input', () => { updatePairCalc(i); updateTxnSummary(n); })
+      );
+    }
+  }
+
+  function pairSectionHTML(i, total) {
+    const label = total > 1 ? `Pair ${i + 1} of ${total}` : 'Pair Details';
+    return `
+      <div class="pair-section" id="pair-section-${i}">
+        <div class="pair-section-header">
+          <span class="pair-section-label">👟 ${label}</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sl-brand-${i}">Brand Name *</label>
+            <input type="text" id="sl-brand-${i}" placeholder="e.g. Bata, Sparx" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-article-${i}">Article / Model *</label>
+            <input type="text" id="sl-article-${i}" placeholder="Model name" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-size-${i}">Size *</label>
+            <input type="number" id="sl-size-${i}" placeholder="6–12" min="1" max="15" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-category-${i}">Category *</label>
+            <select id="sl-category-${i}" required>
+              <option value="">Select category</option>
+              ${CATS.map(c => `<option>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sl-type-${i}">Type *</label>
+            <select id="sl-type-${i}" required>
+              <option value="">Select type</option>
+              ${TYPES.map(t => `<option>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" id="sl-shoestyle-group-${i}" style="display:none">
+            <label for="sl-shoestyle-${i}">Shoe Style *</label>
+            <select id="sl-shoestyle-${i}">
+              <option value="">Select style</option>
+              ${SHOE_STYLES.map(s => `<option>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sl-color-${i}">Color *</label>
+            <input type="text" id="sl-color-${i}" placeholder="e.g. Black, Red" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-qty-${i}">Qty Sold *</label>
+            <input type="number" id="sl-qty-${i}" placeholder="1" min="1" value="1" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-cost-${i}">Cost Price / pair (₹) *</label>
+            <input type="number" id="sl-cost-${i}" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-mrp-${i}">MRP / pair (₹) *</label>
+            <input type="number" id="sl-mrp-${i}" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-sell-${i}">Selling Price / pair (₹) *</label>
+            <input type="number" id="sl-sell-${i}" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+        </div>
+
+        <!-- Per-pair auto-calculated preview -->
+        <div class="calc-grid pair-calc">
+          <div class="calc-item">
+            <div class="calc-label">Total Sale</div>
+            <div class="calc-value" id="c-total-sale-${i}">₹0</div>
+          </div>
+          <div class="calc-item">
+            <div class="calc-label">Total Cost</div>
+            <div class="calc-value" id="c-total-cost-${i}">₹0</div>
+          </div>
+          <div class="calc-item">
+            <div class="calc-label">Profit / Pair</div>
+            <div class="calc-value" id="c-profit-pair-${i}">₹0</div>
+          </div>
+          <div class="calc-item">
+            <div class="calc-label">Total Profit</div>
+            <div class="calc-value" id="c-total-profit-${i}">₹0</div>
+          </div>
+          <div class="calc-item">
+            <div class="calc-label">Discount</div>
+            <div class="calc-value" id="c-discount-${i}">₹0</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function updatePairCalc(i) {
+    const qty  = Number(document.getElementById(`sl-qty-${i}`)?.value)  || 0;
+    const cost = Number(document.getElementById(`sl-cost-${i}`)?.value) || 0;
+    const mrp  = Number(document.getElementById(`sl-mrp-${i}`)?.value)  || 0;
+    const sell = Number(document.getElementById(`sl-sell-${i}`)?.value) || 0;
 
     const totalSale   = qty * sell;
     const totalCost   = qty * cost;
@@ -216,13 +279,36 @@ const Sales = (() => {
       const el = document.getElementById(id);
       if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
     };
-    set('c-total-sale',   totalSale);
-    set('c-total-cost',   totalCost);
-    set('c-profit-pair',  profitPair);
-    set('c-total-profit', totalProfit);
-    set('c-discount',     discount);
+    set(`c-total-sale-${i}`,   totalSale);
+    set(`c-total-cost-${i}`,   totalCost);
+    set(`c-profit-pair-${i}`,  profitPair);
+    set(`c-total-profit-${i}`, totalProfit);
+    set(`c-discount-${i}`,     discount);
   }
 
+  function updateTxnSummary(n) {
+    let totSale = 0, totCost = 0, totProfit = 0, totDiscount = 0;
+    for (let i = 0; i < n; i++) {
+      const qty  = Number(document.getElementById(`sl-qty-${i}`)?.value)  || 0;
+      const cost = Number(document.getElementById(`sl-cost-${i}`)?.value) || 0;
+      const mrp  = Number(document.getElementById(`sl-mrp-${i}`)?.value)  || 0;
+      const sell = Number(document.getElementById(`sl-sell-${i}`)?.value) || 0;
+      totSale    += qty * sell;
+      totCost    += qty * cost;
+      totProfit  += qty * (sell - cost);
+      totDiscount += mrp - sell;
+    }
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
+    };
+    set('txn-total-sale',    totSale);
+    set('txn-total-cost',    totCost);
+    set('txn-total-profit',  totProfit);
+    set('txn-total-discount',totDiscount);
+  }
+
+  // ── Show / hide form ──────────────────────────────────────
   function showForm(show) {
     const card = document.getElementById('sale-form-card');
     const btn  = document.getElementById('toggle-sale-btn');
@@ -235,13 +321,97 @@ const Sales = (() => {
       document.getElementById('sl-time').value = now.toTimeString().slice(0, 5);
       document.getElementById('sale-form-title').textContent = '🛒 Record a Sale';
       document.getElementById('sale-submit-btn').textContent = 'Save Sale';
-      document.getElementById('sl-shoestyle-group').style.display = 'none';
+      document.getElementById('pairs-container').innerHTML = '';
+      document.getElementById('txn-summary').style.display = 'none';
       editIndex = null;
-      updateCalc();
     }
     if (show) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // ── Submit: save one row per pair ─────────────────────────
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('sale-submit-btn');
+
+    const date     = document.getElementById('sl-date').value.trim();
+    const time     = document.getElementById('sl-time').value.trim();
+    const pairsTxn = Number(document.getElementById('sl-pairs-txn').value) || 0;
+
+    if (!date || !time)   { App.toast('Please fill in Date and Time.', 'error'); return; }
+    if (!pairsTxn)        { App.toast('Please select number of pairs.', 'error'); return; }
+
+    // Validate & collect each pair's data
+    const pairRows = [];
+    for (let i = 0; i < pairsTxn; i++) {
+      const brand     = document.getElementById(`sl-brand-${i}`)?.value.trim()    || '';
+      const article   = document.getElementById(`sl-article-${i}`)?.value.trim()  || '';
+      const size      = document.getElementById(`sl-size-${i}`)?.value.trim()     || '';
+      const cat       = document.getElementById(`sl-category-${i}`)?.value        || '';
+      const type      = document.getElementById(`sl-type-${i}`)?.value            || '';
+      const shoeStyle = document.getElementById(`sl-shoestyle-${i}`)?.value       || '';
+      const color     = document.getElementById(`sl-color-${i}`)?.value.trim()    || '';
+      const qty       = Number(document.getElementById(`sl-qty-${i}`)?.value)     || 0;
+      const cost      = Number(document.getElementById(`sl-cost-${i}`)?.value)    || 0;
+      const mrp       = Number(document.getElementById(`sl-mrp-${i}`)?.value)     || 0;
+      const sell      = Number(document.getElementById(`sl-sell-${i}`)?.value)    || 0;
+
+      const label = pairsTxn > 1 ? ` (Pair ${i + 1})` : '';
+      if (!brand)   { App.toast(`Brand missing${label}.`,   'error'); return; }
+      if (!article) { App.toast(`Article missing${label}.`, 'error'); return; }
+      if (!size)    { App.toast(`Size missing${label}.`,    'error'); return; }
+      if (!cat)     { App.toast(`Category missing${label}.`,'error'); return; }
+      if (!type)    { App.toast(`Type missing${label}.`,    'error'); return; }
+      if (!color)   { App.toast(`Color missing${label}.`,   'error'); return; }
+      if (qty < 1)  { App.toast(`Qty must be ≥ 1${label}.`,'error'); return; }
+      if (!cost || !mrp || !sell) { App.toast(`Prices missing${label}.`, 'error'); return; }
+      if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${label}.`, 'error'); return; }
+      if (sell > mrp) { App.toast(`Selling price > MRP${label}.`, 'error'); return; }
+
+      const totalSale   = qty * sell;
+      const totalCost   = qty * cost;
+      const profitPair  = sell - cost;
+      const totalProfit = qty * profitPair;
+      const discount    = mrp - sell;
+
+      pairRows.push([
+        date, time, brand, article, Number(size), cat, type, shoeStyle, color,
+        pairsTxn, qty, cost, mrp, sell,
+        totalSale, totalCost, profitPair, totalProfit, discount
+      ]);
+    }
+
+    // ── Save mode: edit (single row) vs add (all pair rows) ──
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (editIndex !== null) {
+        // Edit always updates just the one row
+        await API.updateSale(editIndex, pairRows[0]);
+        allRows[editIndex] = pairRows[0];
+        App.toast('Sale record updated!', 'success');
+      } else {
+        // Add all pair rows sequentially
+        for (const row of pairRows) {
+          await API.addSale(row);
+          allRows.push(row);
+        }
+        App.toast(
+          pairRows.length > 1
+            ? `${pairRows.length} sale records saved successfully!`
+            : 'Sale recorded successfully!',
+          'success'
+        );
+      }
+      showForm(false);
+      renderTable();
+    } catch (err) {
+      App.toast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = editIndex !== null ? 'Update Sale' : 'Save Sale';
+    }
+  }
+
+  // ── Table render ──────────────────────────────────────────
   function renderTable() {
     const search = (document.getElementById('ff-search')?.value || '').toLowerCase();
     const cat    = document.getElementById('ff-category')?.value || '';
@@ -327,90 +497,39 @@ const Sales = (() => {
     renderTable();
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const btn = document.getElementById('sale-submit-btn');
-
-    const date      = document.getElementById('sl-date').value.trim();
-    const time      = document.getElementById('sl-time').value.trim();
-    const brand     = document.getElementById('sl-brand').value.trim();
-    const article   = document.getElementById('sl-article').value.trim();
-    const size      = document.getElementById('sl-size').value.trim();
-    const cat       = document.getElementById('sl-category').value;
-    const type      = document.getElementById('sl-type').value;
-    const shoeStyle = document.getElementById('sl-shoestyle').value;
-    const color     = document.getElementById('sl-color').value.trim();
-    const pairsTxn  = Number(document.getElementById('sl-pairs-txn').value) || 0;
-    const qty       = Number(document.getElementById('sl-qty').value)       || 0;
-    const cost      = Number(document.getElementById('sl-cost').value)      || 0;
-    const mrp       = Number(document.getElementById('sl-mrp').value)       || 0;
-    const sell      = Number(document.getElementById('sl-sell').value)      || 0;
-
-    if (!date || !time || !brand || !article || !size || !cat || !type || !color || !pairsTxn || !qty || !cost || !mrp || !sell) {
-      App.toast('Please fill in all required fields.', 'error'); return;
-    }
-    if (type === 'Shoe' && !shoeStyle) {
-      App.toast('Please select Shoe Style (Lace / Laceless) for Shoe type.', 'error'); return;
-    }
-    if (sell > mrp)  { App.toast('Selling price cannot exceed MRP.', 'error'); return; }
-    if (qty < 1)     { App.toast('Quantity must be at least 1.', 'error');     return; }
-
-    const totalSale   = qty * sell;
-    const totalCost   = qty * cost;
-    const profitPair  = sell - cost;
-    const totalProfit = qty * profitPair;
-    const discount    = mrp - sell;
-
-    // col order matches header definition above
-    const row = [
-      date, time, brand, article, Number(size), cat, type, shoeStyle, color,
-      pairsTxn, qty, cost, mrp, sell,
-      totalSale, totalCost, profitPair, totalProfit, discount
-    ];
-
-    btn.disabled = true; btn.textContent = 'Saving…';
-    try {
-      if (editIndex !== null) {
-        await API.updateSale(editIndex, row);
-        allRows[editIndex] = row;
-        App.toast('Sale record updated!', 'success');
-      } else {
-        await API.addSale(row);
-        allRows.push(row);
-        App.toast('Sale recorded successfully!', 'success');
-      }
-      showForm(false);
-      renderTable();
-    } catch (err) {
-      App.toast('Error: ' + err.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = editIndex !== null ? 'Update Sale' : 'Save Sale';
-    }
-  }
-
+  // ── Edit (always single-row mode) ─────────────────────────
   function edit(origIdx) {
     editIndex = origIdx;
     const r = allRows[origIdx];
-    document.getElementById('sl-date').value       = r[0]  || '';
-    document.getElementById('sl-time').value       = r[1]  || '';
-    document.getElementById('sl-brand').value      = r[2]  || '';
-    document.getElementById('sl-article').value    = r[3]  || '';
-    document.getElementById('sl-size').value       = r[4]  || '';
-    document.getElementById('sl-category').value   = r[5]  || '';
-    document.getElementById('sl-type').value       = r[6]  || '';
-    document.getElementById('sl-shoestyle').value  = r[7]  || '';
-    document.getElementById('sl-color').value      = r[8]  || '';
-    document.getElementById('sl-pairs-txn').value  = r[9]  || '';
-    document.getElementById('sl-qty').value        = r[10] || '';
-    document.getElementById('sl-cost').value       = r[11] || '';
-    document.getElementById('sl-mrp').value        = r[12] || '';
-    document.getElementById('sl-sell').value       = r[13] || '';
-    document.getElementById('sl-shoestyle-group').style.display = r[6] === 'Shoe' ? 'flex' : 'none';
-    document.getElementById('sale-form-title').textContent = '✏️ Edit Sale Record';
-    document.getElementById('sale-submit-btn').textContent = 'Update Sale';
     showForm(true);
-    updateCalc();
+
+    // Set txn header
+    document.getElementById('sl-date').value      = r[0]  || '';
+    document.getElementById('sl-time').value      = r[1]  || '';
+    document.getElementById('sl-pairs-txn').value = r[9]  || 1;
+
+    // Build exactly 1 pair section (editing one row at a time)
+    buildPairSections(1);
+
+    document.getElementById('sl-brand-0').value     = r[2]  || '';
+    document.getElementById('sl-article-0').value   = r[3]  || '';
+    document.getElementById('sl-size-0').value       = r[4]  || '';
+    document.getElementById('sl-category-0').value  = r[5]  || '';
+    document.getElementById('sl-type-0').value       = r[6]  || '';
+    document.getElementById('sl-shoestyle-0').value = r[7]  || '';
+    document.getElementById('sl-color-0').value     = r[8]  || '';
+    document.getElementById('sl-qty-0').value        = r[10] || '';
+    document.getElementById('sl-cost-0').value       = r[11] || '';
+    document.getElementById('sl-mrp-0').value        = r[12] || '';
+    document.getElementById('sl-sell-0').value       = r[13] || '';
+
+    if (r[6] === 'Shoe') {
+      document.getElementById('sl-shoestyle-group-0').style.display = 'flex';
+    }
+
+    document.getElementById('sale-form-title').textContent  = '✏️ Edit Sale Record';
+    document.getElementById('sale-submit-btn').textContent  = 'Update Sale';
+    updatePairCalc(0);
   }
 
   async function del(origIdx) {
