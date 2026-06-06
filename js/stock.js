@@ -627,6 +627,7 @@ const Stock = (() => {
           <td style="color:var(--accent);font-weight:700">₹${totalCostVal.toLocaleString('en-IN')}</td>
           <td>
             <div class="action-btns">
+              <button class="action-sell" onclick="Stock.sell(${origIdx})">💰 Sell</button>
               <button class="action-edit" onclick="Stock.edit(${origIdx})">Edit</button>
               <button class="action-delete" onclick="Stock.delete(${origIdx})">Delete</button>
             </div>
@@ -691,5 +692,181 @@ const Stock = (() => {
     }
   }
 
-  return { render, edit, delete: del };
+  // ── Sell: open quick-sell modal ───────────────────────────
+  function sell(origIdx) {
+    const r = allRows[origIdx];
+    const stockQty = Number(r[8]) || 0;
+    const mrp      = Number(r[10]) || 0;
+
+    // Remove any existing modal
+    document.getElementById('sell-modal-overlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'sell-modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box" id="sell-modal-box">
+        <div class="modal-header">
+          <div class="modal-title">💰 Sell This Item</div>
+          <button class="modal-close" id="sell-modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <!-- Stock item summary -->
+          <div class="modal-stock-info">
+            <div class="modal-stock-info-row"><span>Brand</span><strong>${r[1] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Article</span><strong>${r[2] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Size</span><strong>${r[3] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Color</span><strong>${r[7] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Category</span><strong>${r[4] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Type</span><strong>${r[5] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Stock Available</span><strong style="color:var(--green)">${stockQty} pairs</strong></div>
+            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${mrp.toLocaleString('en-IN')}</strong></div>
+          </div>
+
+          <!-- Sale details -->
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label for="sell-modal-date">Sale Date *</label>
+              <input type="date" id="sell-modal-date" />
+            </div>
+            <div class="form-group">
+              <label for="sell-modal-time">Sale Time *</label>
+              <input type="time" id="sell-modal-time" />
+            </div>
+            <div class="form-group">
+              <label for="sell-modal-qty">Qty to Sell * <span style="color:var(--text3);font-weight:400">(max ${stockQty})</span></label>
+              <input type="number" id="sell-modal-qty" min="1" max="${stockQty}" value="1" />
+            </div>
+            <div class="form-group">
+              <label for="sell-modal-price">Selling Price / pair (₹) *</label>
+              <input type="number" id="sell-modal-price" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+
+          <!-- Live calc -->
+          <div class="calc-grid" style="margin-top:12px;padding:12px 14px">
+            <div class="calc-item">
+              <div class="calc-label">Total Sale</div>
+              <div class="calc-value" id="sell-modal-total-sale">₹0</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label">Profit / pair</div>
+              <div class="calc-value" id="sell-modal-profit-pair">₹0</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label">Total Profit</div>
+              <div class="calc-value" id="sell-modal-total-profit">₹0</div>
+            </div>
+            <div class="calc-item">
+              <div class="calc-label">Discount / pair</div>
+              <div class="calc-value" id="sell-modal-discount">₹0</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="sell-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="sell-modal-confirm" style="background:linear-gradient(135deg,var(--green),#059669)">✅ Confirm Sale</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Prefill date/time IST
+    document.getElementById('sell-modal-date').value = getISTDateStr();
+    document.getElementById('sell-modal-time').value = new Date().toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false
+    });
+
+    // Live calculation
+    const calcSell = () => {
+      const qty   = Number(document.getElementById('sell-modal-qty')?.value)   || 0;
+      const price = Number(document.getElementById('sell-modal-price')?.value) || 0;
+      const cost  = Number(r[9]) || 0;
+      const inr   = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+      const profitPair  = price - cost;
+      const totalSale   = qty * price;
+      const totalProfit = qty * profitPair;
+      const discount    = mrp - price;
+      const setC = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
+      };
+      setC('sell-modal-total-sale',   totalSale);
+      setC('sell-modal-profit-pair',  profitPair);
+      setC('sell-modal-total-profit', totalProfit);
+      setC('sell-modal-discount',     discount);
+    };
+    document.getElementById('sell-modal-qty').addEventListener('input', calcSell);
+    document.getElementById('sell-modal-price').addEventListener('input', calcSell);
+
+    // Close handlers
+    const closeModal = () => overlay.remove();
+    document.getElementById('sell-modal-close').addEventListener('click', closeModal);
+    document.getElementById('sell-modal-cancel').addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    // Confirm sale
+    document.getElementById('sell-modal-confirm').addEventListener('click', async () => {
+      const saleDate  = document.getElementById('sell-modal-date').value.trim();
+      const saleTime  = document.getElementById('sell-modal-time').value.trim();
+      const qtyToSell = Number(document.getElementById('sell-modal-qty').value) || 0;
+      const sellPrice = Number(document.getElementById('sell-modal-price').value) || 0;
+      const costPrice = Number(r[9]) || 0;
+      const mrpPrice  = Number(r[10]) || 0;
+
+      if (!saleDate) { App.toast('Please enter sale date.', 'error'); return; }
+      if (!saleTime) { App.toast('Please enter sale time.', 'error'); return; }
+      if (qtyToSell < 1)         { App.toast('Qty to sell must be at least 1.', 'error'); return; }
+      if (qtyToSell > stockQty)  { App.toast(`Only ${stockQty} pairs in stock.`, 'error'); return; }
+      if (!sellPrice)            { App.toast('Please enter selling price.', 'error'); return; }
+      if (sellPrice > mrpPrice)  { App.toast('Selling price cannot exceed MRP.', 'error'); return; }
+
+      const totalSale   = qtyToSell * sellPrice;
+      const totalCost   = qtyToSell * costPrice;
+      const profitPair  = sellPrice - costPrice;
+      const totalProfit = qtyToSell * profitPair;
+      const discount    = mrpPrice - sellPrice;
+
+      // Sale row: [Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount]
+      const saleRow = [
+        saleDate, saleTime,
+        r[1], r[2], r[3], r[4], r[5], r[6] || '', r[7],
+        1, qtyToSell, costPrice, mrpPrice, sellPrice,
+        totalSale, totalCost, profitPair, totalProfit, discount
+      ];
+
+      const confirmBtn = document.getElementById('sell-modal-confirm');
+      confirmBtn.disabled = true; confirmBtn.textContent = 'Saving…';
+
+      try {
+        // 1. Add sale record
+        await API.addSale(saleRow);
+
+        // 2. Update or delete stock
+        const newQty = stockQty - qtyToSell;
+        if (newQty <= 0) {
+          await API.deleteStock(origIdx);
+          allRows.splice(origIdx, 1);
+        } else {
+          const updatedStockRow = [...r];
+          updatedStockRow[8] = newQty;
+          await API.updateStock(origIdx, updatedStockRow);
+          allRows[origIdx] = updatedStockRow;
+        }
+
+        closeModal();
+        renderTable();
+        App.toast(
+          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[1]} ${r[2]} (Size ${r[3]}) — moved to Sales!`,
+          'success'
+        );
+      } catch (err) {
+        App.toast('Error: ' + err.message, 'error');
+        confirmBtn.disabled = false; confirmBtn.textContent = '✅ Confirm Sale';
+      }
+    });
+  }
+
+  return { render, edit, sell, delete: del };
 })();
