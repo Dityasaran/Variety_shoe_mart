@@ -27,6 +27,41 @@ const Sales = (() => {
     });
   }
 
+  // ── Safe display formatters for data coming from Google Sheets ───
+  // Handles both clean strings ('2026-06-03') and ISO timestamps
+  // ('2026-06-02T18:30:00.000Z') that Sheets sometimes returns.
+  function fmtDate(val) {
+    if (!val) return '—';
+    const s = String(val);
+    // Already a plain YYYY-MM-DD string
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // ISO timestamp — convert to IST date
+    try {
+      return new Date(s).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    } catch { return s; }
+  }
+
+  function fmtTime(val) {
+    if (!val) return '—';
+    const s = String(val);
+    // Already HH:MM format
+    if (/^\d{2}:\d{2}/.test(s)) return s.slice(0, 5);
+    // ISO timestamp from Sheets (1899-12-30T13:04:50.000Z for time-only cells)
+    try {
+      const d = new Date(s);
+      // Time-only serial (year 1899/1900) — extract HH:MM in IST
+      if (d.getFullYear() < 1970) {
+        return new Date(s).toLocaleTimeString('en-IN', {
+          timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false
+        });
+      }
+      // Full ISO datetime — extract time in IST
+      return new Date(s).toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false
+      });
+    } catch { return s; }
+  }
+
   // ── Render page ───────────────────────────────────────────────────────────
   function render(rows) {
     allRows = rows;
@@ -887,8 +922,8 @@ const Sales = (() => {
       return `
         <tr>
           <td>${fi + 1}</td>
-          <td>${r[0] || '—'}</td>
-          <td style="color:var(--text3)">${r[1] || '—'}</td>
+          <td>${fmtDate(r[0])}</td>
+          <td style="color:var(--text3)">${fmtTime(r[1])}</td>
           <td><strong style="color:var(--text)">${r[2] || '—'}</strong></td>
           <td>${r[3] || '—'}</td>
           <td>${r[4] || '—'}</td>

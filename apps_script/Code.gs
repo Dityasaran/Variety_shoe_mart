@@ -19,6 +19,25 @@ const SALES_HEADERS = [
   'Total Sale Amount', 'Total Cost', 'Profit/Pair', 'Total Profit', 'Discount Given'
 ];
 
+// ── Format any Date object into a clean string ────────────────
+// Google Sheets returns date/time cells as JS Date objects.
+// Time-only cells are stored relative to 1899-12-30 (year < 1970).
+function formatCell(cell) {
+  if (!(cell instanceof Date) || isNaN(cell.getTime())) return cell;
+  const year = cell.getFullYear();
+  if (year < 1970) {
+    // Time-only value — return HH:MM in spreadsheet local time
+    const h = String(cell.getHours()).padStart(2, '0');
+    const m = String(cell.getMinutes()).padStart(2, '0');
+    return h + ':' + m;
+  }
+  // Regular date — return YYYY-MM-DD in spreadsheet local time
+  const y  = String(cell.getFullYear());
+  const mo = String(cell.getMonth() + 1).padStart(2, '0');
+  const d  = String(cell.getDate()).padStart(2, '0');
+  return y + '-' + mo + '-' + d;
+}
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function getOrCreateSheet(ss, name, headers) {
@@ -28,7 +47,6 @@ function getOrCreateSheet(ss, name, headers) {
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   } else {
-    // Always ensure header row is correct (repair if wrong/empty)
     const lastCol = sheet.getLastColumn();
     const firstRow = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
     if (firstRow.length === 0 || firstRow[0] === '') {
@@ -44,32 +62,24 @@ function getOrCreateSheet(ss, name, headers) {
 function fixAllHeaders() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
 
-  // Fix stock_reading headers
-  let stock = ss.getSheetByName('stock_reading');
-  if (!stock) {
-    stock = ss.insertSheet('stock_reading');
-  }
+  let stock = ss.getSheetByName('stock_reading') || ss.insertSheet('stock_reading');
   stock.getRange(1, 1, 1, STOCK_HEADERS.length).setValues([STOCK_HEADERS]);
   stock.getRange(1, 1, 1, STOCK_HEADERS.length).setFontWeight('bold');
   Logger.log('✅ stock_reading headers fixed: ' + STOCK_HEADERS.join(', '));
 
-  // Fix Product_sales headers
-  let sales = ss.getSheetByName('Product_sales');
-  if (!sales) {
-    sales = ss.insertSheet('Product_sales');
-  }
+  let sales = ss.getSheetByName('Product_sales') || ss.insertSheet('Product_sales');
   sales.getRange(1, 1, 1, SALES_HEADERS.length).setValues([SALES_HEADERS]);
   sales.getRange(1, 1, 1, SALES_HEADERS.length).setFontWeight('bold');
   Logger.log('✅ Product_sales headers fixed: ' + SALES_HEADERS.join(', '));
 }
 
-// Keep this for backward compatibility
-function fixStockHeaders() { fixAllHeaders(); }
-
 function getAllRows(sheet) {
   if (sheet.getLastRow() <= 1) return [];
   const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
-  return data;
+  // Convert any Date objects to clean strings before JSON serialisation
+  return data.map(function(row) {
+    return row.map(formatCell);
+  });
 }
 
 function makeResponse(obj) {
@@ -79,7 +89,6 @@ function makeResponse(obj) {
 }
 
 // ── doGet — handles all read + write actions via GET ─────────
-// Using GET for everything avoids CORS preflight issues.
 
 function doGet(e) {
   try {
@@ -114,7 +123,7 @@ function doGet(e) {
     }
 
     if (action === 'updateStock') {
-      const rowIdx = parseInt(p.rowIndex); // 0-based data row (row 2 in sheet = index 0)
+      const rowIdx = parseInt(p.rowIndex);
       const row    = JSON.parse(p.row);
       const sheet  = getOrCreateSheet(ss, 'stock_reading', STOCK_HEADERS);
       sheet.getRange(rowIdx + 2, 1, 1, row.length).setValues([row]);
