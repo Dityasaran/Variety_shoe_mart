@@ -123,7 +123,7 @@ const Sales = (() => {
                 <div class="calc-value" id="txn-total-sale">₹0</div>
               </div>
               <div class="calc-item">
-                <div class="calc-label">Total Wholesale Cost</div>
+                <div class="calc-label">Total Wholesale Value</div>
                 <div class="calc-value" id="txn-total-cost">₹0</div>
               </div>
               <div class="calc-item">
@@ -179,7 +179,7 @@ const Sales = (() => {
                 <th>#</th><th>Date</th><th>Time</th><th>Brand</th><th>Article</th>
                 <th>Size</th><th>Cat.</th><th>Type</th><th>Style</th><th>Color</th>
                 <th>Pairs/Txn</th><th>Qty</th><th>Wholesale Rate</th><th>MRP</th>
-                <th>Sell Price</th><th>Total Sale</th><th>Total Cost</th>
+                <th>Sell Price</th><th>Total Sale</th><th>Total Wholesale Value</th>
                 <th>Profit/Pair</th><th>Total Profit</th><th>Discount</th><th>Actions</th>
               </tr>
             </thead>
@@ -654,7 +654,7 @@ const Sales = (() => {
             <div class="calc-value" id="c-total-sale-${i}">₹0</div>
           </div>
           <div class="calc-item">
-            <div class="calc-label">Total Cost</div>
+            <div class="calc-label">Total Wholesale Value</div>
             <div class="calc-value" id="c-total-cost-${i}">₹0</div>
           </div>
           <div class="calc-item">

@@ -19,23 +19,30 @@ const SALES_HEADERS = [
   'Total Sale Amount', 'Total Cost', 'Profit/Pair', 'Total Profit', 'Discount Given'
 ];
 
-// ── Format any Date object into a clean string ────────────────
-// Google Sheets returns date/time cells as JS Date objects.
-// Time-only cells are stored relative to 1899-12-30 (year < 1970).
+// ── Format any cell value returned by getValues() into a clean type ─
+// Google Sheets returns date/time cells as JS Date objects, and can
+// return numbers with floating-point noise (e.g. 1098.9700001 for 1099).
 function formatCell(cell) {
-  if (!(cell instanceof Date) || isNaN(cell.getTime())) return cell;
-  const year = cell.getFullYear();
-  if (year < 1970) {
-    // Time-only value — return HH:MM in spreadsheet local time
-    const h = String(cell.getHours()).padStart(2, '0');
-    const m = String(cell.getMinutes()).padStart(2, '0');
-    return h + ':' + m;
+  // Handle Date objects
+  if (cell instanceof Date && !isNaN(cell.getTime())) {
+    const year = cell.getFullYear();
+    if (year < 1970) {
+      // Time-only value (Sheets stores time relative to 1899-12-30)
+      const h = String(cell.getHours()).padStart(2, '0');
+      const m = String(cell.getMinutes()).padStart(2, '0');
+      return h + ':' + m;
+    }
+    // Regular date — return YYYY-MM-DD in spreadsheet local timezone
+    const y  = String(cell.getFullYear());
+    const mo = String(cell.getMonth() + 1).padStart(2, '0');
+    const d  = String(cell.getDate()).padStart(2, '0');
+    return y + '-' + mo + '-' + d;
   }
-  // Regular date — return YYYY-MM-DD in spreadsheet local time
-  const y  = String(cell.getFullYear());
-  const mo = String(cell.getMonth() + 1).padStart(2, '0');
-  const d  = String(cell.getDate()).padStart(2, '0');
-  return y + '-' + mo + '-' + d;
+  // Round numbers to 2 decimal places to eliminate floating-point noise
+  if (typeof cell === 'number' && isFinite(cell)) {
+    return Math.round(cell * 100) / 100;
+  }
+  return cell;
 }
 
 // ── Helpers ──────────────────────────────────────────────────

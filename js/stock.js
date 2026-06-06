@@ -109,7 +109,7 @@ const Stock = (() => {
                 <th>#</th><th>Date</th><th>Brand</th><th>Article</th>
                 <th>Size</th><th>Cat.</th><th>Type</th><th>Style</th>
                 <th>Color</th><th>Qty</th>
-                <th>Cost/pair</th><th>MRP/pair</th><th>Total Cost Value</th><th>Actions</th>
+                <th>Wholesale Rate</th><th>MRP/pair</th><th>Total Wholesale Value</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="stock-tbody"></tbody>
@@ -334,7 +334,7 @@ const Stock = (() => {
             <input type="text" id="se-shared-color" placeholder="e.g. Black, Navy Blue" required />
           </div>
           <div class="form-group">
-            <label for="se-shared-cost">Cost Price / pair (₹) *</label>
+            <label for="se-shared-cost">Wholesale Rate / pair (₹) *</label>
             <input type="number" id="se-shared-cost" placeholder="0.00" min="0" step="0.01" required />
           </div>
           <div class="form-group">
@@ -448,7 +448,7 @@ const Stock = (() => {
             <input type="number" id="se-qty-${i}" placeholder="0" min="0" required />
           </div>
           <div class="form-group">
-            <label for="se-cost-${i}">Cost Price / pair (₹) *</label>
+            <label for="se-cost-${i}">Wholesale Rate / pair (₹) *</label>
             <input type="number" id="se-cost-${i}" placeholder="0.00" min="0" step="0.01" required />
           </div>
           <div class="form-group">
@@ -522,8 +522,8 @@ const Stock = (() => {
       if (!type)    { App.toast('Type missing (shared).', 'error'); return; }
       if (!color)   { App.toast('Color missing (shared).', 'error'); return; }
       if (type === 'Shoe' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
-      if (!cost || !mrp) { App.toast('Cost Price / MRP missing (shared).', 'error'); return; }
-      if (mrp < cost)    { App.toast('MRP cannot be less than Cost Price.', 'error'); return; }
+      if (!cost || !mrp) { App.toast('Wholesale Rate / MRP missing (shared).', 'error'); return; }
+      if (mrp < cost)    { App.toast('MRP cannot be less than Wholesale Rate.', 'error'); return; }
 
       for (let i = 0; i < count; i++) {
         const size = document.getElementById(`se-size-var-${i}`)?.value.trim() || '';
@@ -558,7 +558,7 @@ const Stock = (() => {
         if (!color)   { App.toast(`Color missing${lbl}.`, 'error'); return; }
         if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${lbl}.`, 'error'); return; }
         if (!cost || !mrp) { App.toast(`Prices missing${lbl}.`, 'error'); return; }
-        if (mrp < cost)    { App.toast(`MRP < Cost Price${lbl}.`, 'error'); return; }
+        if (mrp < cost)    { App.toast(`MRP < Wholesale Rate${lbl}.`, 'error'); return; }
 
         entryRows.push([date, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
       }
@@ -741,7 +741,8 @@ const Stock = (() => {
             <div class="modal-stock-info-row"><span>Category</span><strong>${r[4] || '—'}</strong></div>
             <div class="modal-stock-info-row"><span>Type</span><strong>${r[5] || '—'}</strong></div>
             <div class="modal-stock-info-row"><span>Stock Available</span><strong style="color:var(--green)">${stockQty} pairs</strong></div>
-            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${mrp.toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>Wholesale Rate</span><strong>₹${(Number(r[9])||0).toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${(Number(r[10])||0).toLocaleString('en-IN')}</strong></div>
           </div>
 
           <!-- Sale details -->
