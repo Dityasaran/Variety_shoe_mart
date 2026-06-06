@@ -39,19 +39,32 @@ function getOrCreateSheet(ss, name, headers) {
   return sheet;
 }
 
-// ── Run this ONCE from the Apps Script editor to fix headers ─
-// Select fixStockHeaders from the function dropdown and click Run
-function fixStockHeaders() {
-  const ss    = SpreadsheetApp.openById(SHEET_ID);
-  const stock = ss.getSheetByName('stock_reading');
-  if (stock) {
-    stock.getRange(1, 1, 1, STOCK_HEADERS.length).setValues([STOCK_HEADERS]);
-    stock.getRange(1, 1, 1, STOCK_HEADERS.length).setFontWeight('bold');
-    Logger.log('Stock headers fixed: ' + STOCK_HEADERS.join(', '));
-  } else {
-    Logger.log('stock_reading sheet not found — will be created on next API call.');
+// ── Run this ONCE to fix headers on BOTH sheets ──────────────
+// In Apps Script editor: select fixAllHeaders → click ▶ Run
+function fixAllHeaders() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+
+  // Fix stock_reading headers
+  let stock = ss.getSheetByName('stock_reading');
+  if (!stock) {
+    stock = ss.insertSheet('stock_reading');
   }
+  stock.getRange(1, 1, 1, STOCK_HEADERS.length).setValues([STOCK_HEADERS]);
+  stock.getRange(1, 1, 1, STOCK_HEADERS.length).setFontWeight('bold');
+  Logger.log('✅ stock_reading headers fixed: ' + STOCK_HEADERS.join(', '));
+
+  // Fix Product_sales headers
+  let sales = ss.getSheetByName('Product_sales');
+  if (!sales) {
+    sales = ss.insertSheet('Product_sales');
+  }
+  sales.getRange(1, 1, 1, SALES_HEADERS.length).setValues([SALES_HEADERS]);
+  sales.getRange(1, 1, 1, SALES_HEADERS.length).setFontWeight('bold');
+  Logger.log('✅ Product_sales headers fixed: ' + SALES_HEADERS.join(', '));
 }
+
+// Keep this for backward compatibility
+function fixStockHeaders() { fixAllHeaders(); }
 
 function getAllRows(sheet) {
   if (sheet.getLastRow() <= 1) return [];
