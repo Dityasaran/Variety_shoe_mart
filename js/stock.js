@@ -11,7 +11,7 @@ const Stock = (() => {
   let editIndex = null;
 
   const CATS  = ['Men', 'Women', 'Kids'];
-  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops'];
+  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const SHOE_STYLES = ['Lace', 'Laceless'];
 
   // ── Render ────────────────────────────────────────────────
@@ -92,6 +92,14 @@ const Stock = (() => {
 
       <!-- Filters -->
       <div class="filter-bar">
+        <div class="filter-date-group">
+          <label class="filter-label">From</label>
+          <input type="date" id="sf-from" />
+        </div>
+        <div class="filter-date-group">
+          <label class="filter-label">To</label>
+          <input type="date" id="sf-to" />
+        </div>
         <input type="text" id="sf-search" placeholder="🔍 Search brand, article, color…" />
         <select id="sf-category">
           <option value="">All Categories</option>
@@ -101,7 +109,7 @@ const Stock = (() => {
           <option value="">All Types</option>
           ${TYPES.map(t => `<option>${t}</option>`).join('')}
         </select>
-        <button class="btn btn-secondary btn-sm" id="sf-clear">Clear</button>
+        <button class="btn btn-secondary btn-sm" id="sf-clear">✕ Clear</button>
       </div>
 
       <!-- Table -->
@@ -142,6 +150,8 @@ const Stock = (() => {
     document.getElementById('sf-search').addEventListener('input', renderTable);
     document.getElementById('sf-category').addEventListener('change', renderTable);
     document.getElementById('sf-type').addEventListener('change', renderTable);
+    document.getElementById('sf-from').addEventListener('change', renderTable);
+    document.getElementById('sf-to').addEventListener('change', renderTable);
     document.getElementById('sf-clear').addEventListener('click', clearFilters);
 
     renderTable();
@@ -167,15 +177,20 @@ const Stock = (() => {
     const search = (document.getElementById('sf-search')?.value || '').toLowerCase();
     const cat    = document.getElementById('sf-category')?.value || '';
     const type   = document.getElementById('sf-type')?.value || '';
+    const from   = document.getElementById('sf-from')?.value || '';
+    const to     = document.getElementById('sf-to')?.value   || '';
 
     const filtered = allRows.filter(r => {
+      const dStr    = String(r[0] || '').slice(0, 10);
       const brand   = String(r[1] || '').toLowerCase();
       const article = String(r[2] || '').toLowerCase();
       const color   = String(r[7] || '').toLowerCase();
       const matchSearch = !search || brand.includes(search) || article.includes(search) || color.includes(search);
       const matchCat    = !cat  || r[4] === cat;
       const matchType   = !type || r[5] === type;
-      return matchSearch && matchCat && matchType;
+      const matchFrom   = !from || dStr >= from;
+      const matchTo     = !to   || dStr <= to;
+      return matchSearch && matchCat && matchType && matchFrom && matchTo;
     });
 
     document.getElementById('stock-count').textContent = `${filtered.length} item${filtered.length !== 1 ? 's' : ''}`;
@@ -225,6 +240,8 @@ const Stock = (() => {
     document.getElementById('sf-search').value = '';
     document.getElementById('sf-category').value = '';
     document.getElementById('sf-type').value = '';
+    const sfFrom = document.getElementById('sf-from'); if (sfFrom) sfFrom.value = '';
+    const sfTo   = document.getElementById('sf-to');   if (sfTo)   sfTo.value   = '';
     renderTable();
   }
 

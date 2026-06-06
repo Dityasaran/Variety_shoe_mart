@@ -345,6 +345,7 @@ button { cursor: pointer; border: none; background: none; }
   display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 16px;
+  align-items: flex-end;
 }
 .filter-bar input,
 .filter-bar select {
@@ -355,7 +356,37 @@ button { cursor: pointer; border: none; background: none; }
 }
 .filter-bar input:focus,
 .filter-bar select:focus { border-color: var(--accent); }
-.filter-bar input { flex: 1; min-width: 160px; }
+.filter-bar input[type="text"] { flex: 1; min-width: 160px; }
+
+/* Make calendar picker icon visible on dark background */
+.filter-bar input[type="date"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+#dash-from, #dash-to {
+  color-scheme: dark;
+}
+.filter-bar input[type="date"]::-webkit-calendar-picker-indicator,
+.form-group input[type="date"]::-webkit-calendar-picker-indicator,
+.form-group input[type="time"]::-webkit-calendar-picker-indicator,
+#dash-from::-webkit-calendar-picker-indicator,
+#dash-to::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5);
+  cursor: pointer;
+  opacity: 0.8;
+}
+.filter-bar input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Filter date group with label */
+.filter-date-group {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.filter-label {
+  font-size: .65rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .06em;
+}
 
 /* ── Table ────────────────────────────────────────────────── */
 .table-wrapper {
@@ -511,3 +542,214 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
   .stat-grid  { grid-template-columns: 1fr 1fr; }
   .topbar-date { display: none; }
 }
+
+/* ── Same/Different Model Question ─────────────────────────── */
+.same-model-box {
+  background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(16,185,129,.05));
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.same-model-title {
+  font-size: .95rem; font-weight: 700; color: var(--text);
+  margin-bottom: 14px;
+}
+.same-model-title span { color: var(--blue); }
+.same-model-btns {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.same-model-btn {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 22px;
+  background: var(--card2); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: .875rem; font-weight: 600;
+  transition: all var(--transition);
+  cursor: pointer; text-align: left;
+}
+.same-model-btn:hover {
+  border-color: var(--accent);
+  background: rgba(255,107,43,.08);
+}
+.same-model-btn.selected {
+  border-color: var(--accent);
+  background: rgba(255,107,43,.12);
+  color: var(--accent);
+}
+.same-model-hint {
+  font-size: .72rem; font-weight: 400; color: var(--text3);
+}
+
+/* ── Same-mode shared section ───────────────────────────────── */
+.same-model-shared-section {
+  background: rgba(255,107,43,.04);
+  border: 1px solid rgba(255,107,43,.2);
+  border-radius: var(--radius);
+  padding: 18px 20px 14px;
+  margin-bottom: 16px;
+}
+.pair-section-hint {
+  font-size: .72rem; color: var(--text3); font-weight: 400;
+}
+
+/* ── Same-mode variant cards ────────────────────────────────── */
+.same-pairs-variants {
+  margin-bottom: 8px;
+}
+.same-variants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.variant-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: border-color var(--transition);
+}
+.variant-card:hover { border-color: rgba(255,107,43,.4); }
+.variant-card-label {
+  font-size: .72rem; font-weight: 700;
+  color: var(--accent); text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: 2px;
+}
+
+/* ── Analytics Card ─────────────────────────────────────────── */
+.analytics-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.analytics-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 12px;
+}
+.analytics-title {
+  font-size: .9rem; font-weight: 700; color: var(--text2);
+}
+.analytics-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 6px 16px;
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text3); border-radius: 20px;
+  font-size: .78rem; font-weight: 600;
+  transition: all var(--transition); cursor: pointer;
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--text); }
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent; color: #fff;
+}
+.analytics-body {
+  padding: 20px;
+}
+.analytics-period-title {
+  font-size: .82rem; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: 16px;
+}
+.analytics-empty {
+  text-align: center; padding: 32px 16px;
+  color: var(--text3); font-size: .875rem;
+}
+
+/* ── Analytics KPI Row ───────────────────────────────────────── */
+.analytics-kpi-row {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.akpi {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px; flex: 1; min-width: 120px;
+}
+.akpi-label {
+  font-size: .68rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px;
+}
+.akpi-value {
+  font-size: 1.15rem; font-weight: 800; color: var(--text);
+}
+.akpi-value.green { color: var(--green); }
+.akpi-value.gold  { color: var(--gold); }
+
+/* ── Week Grid ───────────────────────────────────────────────── */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.week-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  transition: border-color var(--transition);
+}
+.week-card.has-data { border-color: rgba(255,107,43,.3); }
+.week-card.no-data { opacity: .5; }
+.week-card-label {
+  font-size: .72rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px;
+}
+.week-card-pairs {
+  font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 4px;
+}
+.week-card-revenue {
+  font-size: .9rem; font-weight: 700; color: var(--accent); margin-bottom: 2px;
+}
+.week-card-profit {
+  font-size: .8rem; color: var(--green); font-weight: 600;
+}
+.week-card-txn {
+  font-size: .72rem; color: var(--text3); margin-top: 4px;
+}
+.analytics-month-total {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,107,43,.06);
+  border: 1px solid rgba(255,107,43,.15);
+  border-radius: var(--radius-sm);
+  font-size: .875rem; font-weight: 700;
+}
+.amt-sale   { color: var(--accent); }
+.amt-sep    { color: var(--text3); }
+.amt-profit { color: var(--green); }
+
+/* ── Breakdown Table ─────────────────────────────────────────── */
+.monthly-breakdown-table { overflow-x: auto; }
+.analytics-table-wrap    { overflow-x: auto; margin-top: 12px; }
+.breakdown-table {
+  width: 100%; border-collapse: collapse; font-size: .82rem;
+}
+.breakdown-table thead th {
+  background: var(--bg2); color: var(--text3);
+  font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: 10px 14px; text-align: left; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.breakdown-table tbody tr {
+  border-bottom: 1px solid rgba(30,45,69,.6);
+  transition: background var(--transition);
+}
+.breakdown-table tbody tr:hover { background: var(--card2); }
+.breakdown-table tbody td {
+  padding: 10px 14px; color: var(--text2); white-space: nowrap;
+}
+
+/* ── Range Picker ────────────────────────────────────────────── */
+.range-picker-row {
+  display: flex; gap: 12px; align-items: flex-end;
+  flex-wrap: wrap; margin-bottom: 20px;
+}
+.analytics-range-results { margin-top: 4px; }

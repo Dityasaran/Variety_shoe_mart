@@ -114,7 +114,8 @@ const App = (() => {
     const el = document.getElementById('topbar-date');
     if (el) {
       el.textContent = new Date().toLocaleDateString('en-IN', {
-        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+        timeZone: 'Asia/Kolkata'
       });
     }
   }
@@ -122,6 +123,8 @@ const App = (() => {
   // ── Init ──────────────────────────────────────────────────
   async function init() {
     setDate();
+    // Auto-refresh the date every 60 seconds (keeps it current at midnight)
+    setInterval(setDate, 60000);
 
     // Mobile sidebar
     document.getElementById('hamburger').addEventListener('click', () => {

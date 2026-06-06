@@ -3,7 +3,7 @@
 // Columns (0-indexed) in Product_sales sheet:
 //   0=Date  1=Time  2=Brand  3=Article  4=Size  5=Category
 //   6=Type  7=ShoeStyle  8=Color  9=PairsInTransaction
-//   10=QtySold  11=CostPrice  12=MRP  13=SellingPrice
+//   10=QtySold  11=WholesaleRate  12=MRP  13=SellingPrice
 //   14=TotalSale  15=TotalCost  16=ProfitPerPair  17=TotalProfit  18=Discount
 // ============================================================
 
@@ -13,11 +13,21 @@ const Sales = (() => {
   let editIndex = null;
 
   const CATS        = ['Men', 'Women', 'Kids'];
-  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops'];
+  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const SHOE_STYLES = ['Lace', 'Laceless'];
   const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
-  // ── Render page ───────────────────────────────────────────
+  // ── IST helpers ──────────────────────────────────────────
+  function getISTDateStr() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD
+  }
+  function getISTTimeStr() {
+    return new Date().toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false
+    });
+  }
+
+  // ── Render page ───────────────────────────────────────────────────────────
   function render(rows) {
     allRows = rows;
     const container = document.getElementById('view-container');
@@ -45,9 +55,24 @@ const Sales = (() => {
             <div class="form-group">
               <label for="sl-pairs-txn">No. of Pairs in This Transaction *</label>
               <select id="sl-pairs-txn" required>
-                <option value="">How many different pairs?</option>
+                <option value="">How many pairs sold?</option>
                 ${[1,2,3,4,5,6,7].map(n => `<option value="${n}">${n} pair${n > 1 ? 's' : ''}</option>`).join('')}
               </select>
+            </div>
+          </div>
+
+          <!-- ── Same/Different model question ── -->
+          <div id="same-model-question" style="display:none" class="same-model-box">
+            <div class="same-model-title">📦 Are all pairs the <span>same model</span>?</div>
+            <div class="same-model-btns">
+              <button type="button" class="same-model-btn" id="btn-same-yes">
+                ✅ Yes — Same Model
+                <span class="same-model-hint">Only Size & Color will differ</span>
+              </button>
+              <button type="button" class="same-model-btn" id="btn-same-no">
+                🔀 No — Different Models
+                <span class="same-model-hint">Each pair entered separately</span>
+              </button>
             </div>
           </div>
 
@@ -63,7 +88,7 @@ const Sales = (() => {
                 <div class="calc-value" id="txn-total-sale">₹0</div>
               </div>
               <div class="calc-item">
-                <div class="calc-label">Total Cost</div>
+                <div class="calc-label">Total Wholesale Cost</div>
                 <div class="calc-value" id="txn-total-cost">₹0</div>
               </div>
               <div class="calc-item">
@@ -86,14 +111,24 @@ const Sales = (() => {
 
       <!-- Filters -->
       <div class="filter-bar">
-        <input type="date" id="ff-from" title="From date" />
-        <input type="date" id="ff-to"   title="To date" />
+        <div class="filter-date-group">
+          <label class="filter-label">From</label>
+          <input type="date" id="ff-from" title="From date" />
+        </div>
+        <div class="filter-date-group">
+          <label class="filter-label">To</label>
+          <input type="date" id="ff-to" title="To date" />
+        </div>
         <input type="text" id="ff-search" placeholder="🔍 Search brand, article, color…" />
         <select id="ff-category">
           <option value="">All Categories</option>
           ${CATS.map(c => `<option>${c}</option>`).join('')}
         </select>
-        <button class="btn btn-secondary btn-sm" id="ff-clear">Clear</button>
+        <select id="ff-type">
+          <option value="">All Types</option>
+          ${TYPES.map(t => `<option>${t}</option>`).join('')}
+        </select>
+        <button class="btn btn-secondary btn-sm" id="ff-clear">✕ Clear</button>
       </div>
 
       <!-- Table -->
@@ -108,7 +143,7 @@ const Sales = (() => {
               <tr>
                 <th>#</th><th>Date</th><th>Time</th><th>Brand</th><th>Article</th>
                 <th>Size</th><th>Cat.</th><th>Type</th><th>Style</th><th>Color</th>
-                <th>Pairs/Txn</th><th>Qty</th><th>Cost/pair</th><th>MRP</th>
+                <th>Pairs/Txn</th><th>Qty</th><th>Wholesale Rate</th><th>MRP</th>
                 <th>Sell Price</th><th>Total Sale</th><th>Total Cost</th>
                 <th>Profit/Pair</th><th>Total Profit</th><th>Discount</th><th>Actions</th>
               </tr>
@@ -120,14 +155,25 @@ const Sales = (() => {
       </div>
     `;
 
-    // Prefill date + time
-    const now = new Date();
-    document.getElementById('sl-date').value = now.toISOString().slice(0, 10);
-    document.getElementById('sl-time').value = now.toTimeString().slice(0, 5);
+    // Prefill date + time using IST
+    document.getElementById('sl-date').value = getISTDateStr();
+    document.getElementById('sl-time').value = getISTTimeStr();
 
-    // When pairs count changes → rebuild pair sections
+    // When pairs count changes
     document.getElementById('sl-pairs-txn').addEventListener('change', function () {
-      buildPairSections(Number(this.value) || 0);
+      const n = Number(this.value) || 0;
+      if (n === 0) {
+        hideSameModelQuestion();
+        clearPairsContainer();
+        return;
+      }
+      if (n === 1) {
+        // Single pair — no need to ask same/different
+        hideSameModelQuestion();
+        buildPairSections(1, 'different', 1);
+      } else {
+        showSameModelQuestion(n);
+      }
     });
 
     document.getElementById('toggle-sale-btn').addEventListener('click', () => { editIndex = null; showForm(true); });
@@ -136,6 +182,7 @@ const Sales = (() => {
 
     document.getElementById('ff-search').addEventListener('input', renderTable);
     document.getElementById('ff-category').addEventListener('change', renderTable);
+    document.getElementById('ff-type').addEventListener('change', renderTable);
     document.getElementById('ff-from').addEventListener('change', renderTable);
     document.getElementById('ff-to').addEventListener('change', renderTable);
     document.getElementById('ff-clear').addEventListener('click', clearFilters);
@@ -143,10 +190,55 @@ const Sales = (() => {
     renderTable();
   }
 
+  // ── Same/Different model question ─────────────────────────
+  function showSameModelQuestion(n) {
+    const q = document.getElementById('same-model-question');
+    q.style.display = 'block';
+    // Remove previous listeners by cloning
+    const yesBtn = document.getElementById('btn-same-yes');
+    const noBtn  = document.getElementById('btn-same-no');
+    const newYes = yesBtn.cloneNode(true);
+    const newNo  = noBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYes, yesBtn);
+    noBtn.parentNode.replaceChild(newNo, noBtn);
+
+    newYes.addEventListener('click', () => {
+      newYes.classList.add('selected');
+      newNo.classList.remove('selected');
+      buildPairSections(n, 'same', n);
+    });
+    newNo.addEventListener('click', () => {
+      newNo.classList.add('selected');
+      newYes.classList.remove('selected');
+      buildPairSections(n, 'different', n);
+    });
+  }
+
+  function hideSameModelQuestion() {
+    const q = document.getElementById('same-model-question');
+    if (q) {
+      q.style.display = 'none';
+      // Reset selection
+      document.getElementById('btn-same-yes')?.classList.remove('selected');
+      document.getElementById('btn-same-no')?.classList.remove('selected');
+    }
+  }
+
+  function clearPairsContainer() {
+    document.getElementById('pairs-container').innerHTML = '';
+    document.getElementById('txn-summary').style.display = 'none';
+  }
+
   // ── Build N pair entry blocks ─────────────────────────────
-  function buildPairSections(n) {
+  // mode: 'same' = shared model, only size+color per pair
+  //       'different' = full independent form per pair
+  // prevCount: how many pair sections already existed (for preservation)
+  function buildPairSections(n, mode, totalPairs) {
     const container = document.getElementById('pairs-container');
     const summary   = document.getElementById('txn-summary');
+
+    // Capture existing data before rebuild (preservation on count increase)
+    const savedData = capturePairData();
 
     if (!n) {
       container.innerHTML = '';
@@ -154,25 +246,268 @@ const Sales = (() => {
       return;
     }
 
-    container.innerHTML = Array.from({ length: n }, (_, i) => pairSectionHTML(i, n)).join('');
-    summary.style.display = n > 1 ? 'block' : 'none';
-
-    // Attach listeners for each pair
-    for (let i = 0; i < n; i++) {
-      // Show/hide shoe-style depending on type
-      document.getElementById(`sl-type-${i}`).addEventListener('change', function () {
-        const sg = document.getElementById(`sl-shoestyle-group-${i}`);
-        sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-        if (this.value !== 'Shoe') document.getElementById(`sl-shoestyle-${i}`).value = '';
-      });
-
-      // Recalculate on any price/qty input
-      [`sl-qty-${i}`, `sl-cost-${i}`, `sl-mrp-${i}`, `sl-sell-${i}`].forEach(id =>
-        document.getElementById(id).addEventListener('input', () => { updatePairCalc(i); updateTxnSummary(n); })
-      );
+    if (mode === 'same') {
+      container.innerHTML = sameModeHTML(n);
+      summary.style.display = n > 1 ? 'block' : 'none';
+      attachSameModeListeners(n);
+      // Restore shared fields if we had prior data
+      if (savedData.length > 0) restoreSameSharedFields(savedData[0]);
+      for (let i = 0; i < n; i++) {
+        if (savedData[i]) restoreSameVariantFields(i, savedData[i]);
+      }
+      updateSameModeCalc(n);
+    } else {
+      // Different mode — rebuild, preserving existing pair data
+      container.innerHTML = Array.from({ length: n }, (_, i) => pairSectionHTML(i, n)).join('');
+      summary.style.display = n > 1 ? 'block' : 'none';
+      for (let i = 0; i < n; i++) {
+        attachDifferentModeListeners(i, n);
+        if (savedData[i]) restoreDifferentPairData(i, savedData[i]);
+      }
+      updateTxnSummary(n);
     }
   }
 
+  // ── Capture existing pair form values ─────────────────────
+  function capturePairData() {
+    const data = [];
+    let i = 0;
+    while (document.getElementById(`sl-brand-${i}`) || document.getElementById(`sl-size-var-${i}`)) {
+      if (document.getElementById(`sl-brand-${i}`)) {
+        // Different mode
+        data.push({
+          brand:     document.getElementById(`sl-brand-${i}`)?.value || '',
+          article:   document.getElementById(`sl-article-${i}`)?.value || '',
+          size:      document.getElementById(`sl-size-${i}`)?.value || '',
+          category:  document.getElementById(`sl-category-${i}`)?.value || '',
+          type:      document.getElementById(`sl-type-${i}`)?.value || '',
+          shoeStyle: document.getElementById(`sl-shoestyle-${i}`)?.value || '',
+          color:     document.getElementById(`sl-color-${i}`)?.value || '',
+          qty:       document.getElementById(`sl-qty-${i}`)?.value || '1',
+          cost:      document.getElementById(`sl-cost-${i}`)?.value || '',
+          mrp:       document.getElementById(`sl-mrp-${i}`)?.value || '',
+          sell:      document.getElementById(`sl-sell-${i}`)?.value || '',
+        });
+      } else {
+        // Same mode variant
+        data.push({
+          brand:     document.getElementById('sl-shared-brand')?.value || '',
+          article:   document.getElementById('sl-shared-article')?.value || '',
+          size:      document.getElementById(`sl-size-var-${i}`)?.value || '',
+          category:  document.getElementById('sl-shared-category')?.value || '',
+          type:      document.getElementById('sl-shared-type')?.value || '',
+          shoeStyle: document.getElementById('sl-shared-shoestyle')?.value || '',
+          color:     document.getElementById(`sl-color-var-${i}`)?.value || '',
+          qty:       document.getElementById(`sl-qty-var-${i}`)?.value || '1',
+          cost:      document.getElementById('sl-shared-cost')?.value || '',
+          mrp:       document.getElementById('sl-shared-mrp')?.value || '',
+          sell:      document.getElementById('sl-shared-sell')?.value || '',
+        });
+      }
+      i++;
+    }
+    return data;
+  }
+
+  function restoreDifferentPairData(i, d) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set(`sl-brand-${i}`,    d.brand);
+    set(`sl-article-${i}`,  d.article);
+    set(`sl-size-${i}`,     d.size);
+    set(`sl-category-${i}`, d.category);
+    set(`sl-type-${i}`,     d.type);
+    set(`sl-shoestyle-${i}`,d.shoeStyle);
+    set(`sl-color-${i}`,    d.color);
+    set(`sl-qty-${i}`,      d.qty);
+    set(`sl-cost-${i}`,     d.cost);
+    set(`sl-mrp-${i}`,      d.mrp);
+    set(`sl-sell-${i}`,     d.sell);
+    if (d.type === 'Shoe') {
+      const sg = document.getElementById(`sl-shoestyle-group-${i}`);
+      if (sg) sg.style.display = 'flex';
+    }
+    updatePairCalc(i);
+  }
+
+  function restoreSameSharedFields(d) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set('sl-shared-brand',    d.brand);
+    set('sl-shared-article',  d.article);
+    set('sl-shared-category', d.category);
+    set('sl-shared-type',     d.type);
+    set('sl-shared-shoestyle',d.shoeStyle);
+    set('sl-shared-cost',     d.cost);
+    set('sl-shared-mrp',      d.mrp);
+    set('sl-shared-sell',     d.sell);
+    if (d.type === 'Shoe') {
+      const sg = document.getElementById('sl-shared-shoestyle-group');
+      if (sg) sg.style.display = 'flex';
+    }
+  }
+
+  function restoreSameVariantFields(i, d) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set(`sl-size-var-${i}`,  d.size);
+    set(`sl-color-var-${i}`, d.color);
+    set(`sl-qty-var-${i}`,   d.qty);
+  }
+
+  // ── Same Model HTML ───────────────────────────────────────
+  function sameModeHTML(n) {
+    return `
+      <div class="same-model-shared-section">
+        <div class="pair-section-header">
+          <span class="pair-section-label">📋 Shared Model Details</span>
+          <span class="pair-section-hint">These fields apply to all ${n} pairs</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sl-shared-brand">Brand Name *</label>
+            <input type="text" id="sl-shared-brand" placeholder="e.g. Bata, Sparx" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-article">Article / Model *</label>
+            <input type="text" id="sl-shared-article" placeholder="Model name" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-category">Category *</label>
+            <select id="sl-shared-category" required>
+              <option value="">Select category</option>
+              ${CATS.map(c => `<option>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-type">Type *</label>
+            <select id="sl-shared-type" required>
+              <option value="">Select type</option>
+              ${TYPES.map(t => `<option>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" id="sl-shared-shoestyle-group" style="display:none">
+            <label for="sl-shared-shoestyle">Shoe Style *</label>
+            <select id="sl-shared-shoestyle">
+              <option value="">Select style</option>
+              ${SHOE_STYLES.map(s => `<option>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-cost">Wholesale Rate / pair (₹) *</label>
+            <input type="number" id="sl-shared-cost" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-mrp">MRP / pair (₹) *</label>
+            <input type="number" id="sl-shared-mrp" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="sl-shared-sell">Selling Price / pair (₹) *</label>
+            <input type="number" id="sl-shared-sell" placeholder="0.00" min="0" step="0.01" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="same-pairs-variants">
+        <div class="pair-section-header" style="margin-bottom:12px">
+          <span class="pair-section-label">👟 Per-Pair: Size &amp; Color</span>
+          <span class="pair-section-hint">Enter size and colour for each pair</span>
+        </div>
+        <div class="same-variants-grid">
+          ${Array.from({ length: n }, (_, i) => `
+            <div class="variant-card" id="variant-card-${i}">
+              <div class="variant-card-label">Pair ${i + 1}</div>
+              <div class="form-group">
+                <label for="sl-size-var-${i}">Size *</label>
+                <input type="number" id="sl-size-var-${i}" placeholder="6–12" min="1" max="15" required />
+              </div>
+              <div class="form-group">
+                <label for="sl-color-var-${i}">Color *</label>
+                <input type="text" id="sl-color-var-${i}" placeholder="e.g. Black" required />
+              </div>
+              <div class="form-group">
+                <label for="sl-qty-var-${i}">Qty *</label>
+                <input type="number" id="sl-qty-var-${i}" value="1" min="1" required />
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Per-pair summary preview for same mode -->
+      <div class="calc-grid pair-calc" id="same-mode-calc" style="margin-top:16px">
+        <div class="calc-item">
+          <div class="calc-label">Profit / Pair</div>
+          <div class="calc-value" id="sm-profit-pair">₹0</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-label">Discount / Pair</div>
+          <div class="calc-value" id="sm-discount-pair">₹0</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-label">Estimated Total Sale</div>
+          <div class="calc-value" id="sm-total-sale">₹0</div>
+        </div>
+        <div class="calc-item">
+          <div class="calc-label">Estimated Total Profit</div>
+          <div class="calc-value" id="sm-total-profit">₹0</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function attachSameModeListeners(n) {
+    // Show/hide shoe style
+    document.getElementById('sl-shared-type')?.addEventListener('change', function () {
+      const sg = document.getElementById('sl-shared-shoestyle-group');
+      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
+      if (this.value !== 'Shoe') document.getElementById('sl-shared-shoestyle').value = '';
+      updateSameModeCalc(n);
+    });
+
+    ['sl-shared-cost', 'sl-shared-mrp', 'sl-shared-sell'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => updateSameModeCalc(n));
+    });
+
+    for (let i = 0; i < n; i++) {
+      document.getElementById(`sl-qty-var-${i}`)?.addEventListener('input', () => updateSameModeCalc(n));
+    }
+  }
+
+  function updateSameModeCalc(n) {
+    const cost = Number(document.getElementById('sl-shared-cost')?.value) || 0;
+    const mrp  = Number(document.getElementById('sl-shared-mrp')?.value)  || 0;
+    const sell = Number(document.getElementById('sl-shared-sell')?.value) || 0;
+
+    const profitPair  = sell - cost;
+    const discount    = mrp - sell;
+
+    let totalQty = 0;
+    for (let i = 0; i < n; i++) {
+      totalQty += Number(document.getElementById(`sl-qty-var-${i}`)?.value) || 0;
+    }
+
+    const totalSale   = totalQty * sell;
+    const totalProfit = totalQty * profitPair;
+
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
+    };
+    set('sm-profit-pair',  profitPair);
+    set('sm-discount-pair',discount);
+    set('sm-total-sale',   totalSale);
+    set('sm-total-profit', totalProfit);
+
+    // Also update txn summary
+    const setS = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
+    };
+    setS('txn-total-sale',    totalSale);
+    setS('txn-total-cost',    totalQty * cost);
+    setS('txn-total-profit',  totalProfit);
+    setS('txn-total-discount',discount * totalQty);
+  }
+
+  // ── Different Mode HTML ───────────────────────────────────
   function pairSectionHTML(i, total) {
     const label = total > 1 ? `Pair ${i + 1} of ${total}` : 'Pair Details';
     return `
@@ -223,7 +558,7 @@ const Sales = (() => {
             <input type="number" id="sl-qty-${i}" placeholder="1" min="1" value="1" required />
           </div>
           <div class="form-group">
-            <label for="sl-cost-${i}">Cost Price / pair (₹) *</label>
+            <label for="sl-cost-${i}">Wholesale Rate / pair (₹) *</label>
             <input type="number" id="sl-cost-${i}" placeholder="0.00" min="0" step="0.01" required />
           </div>
           <div class="form-group">
@@ -263,6 +598,18 @@ const Sales = (() => {
     `;
   }
 
+  function attachDifferentModeListeners(i, n) {
+    document.getElementById(`sl-type-${i}`)?.addEventListener('change', function () {
+      const sg = document.getElementById(`sl-shoestyle-group-${i}`);
+      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
+      if (this.value !== 'Shoe') document.getElementById(`sl-shoestyle-${i}`).value = '';
+    });
+
+    [`sl-qty-${i}`, `sl-cost-${i}`, `sl-mrp-${i}`, `sl-sell-${i}`].forEach(id =>
+      document.getElementById(id)?.addEventListener('input', () => { updatePairCalc(i); updateTxnSummary(n); })
+    );
+  }
+
   function updatePairCalc(i) {
     const qty  = Number(document.getElementById(`sl-qty-${i}`)?.value)  || 0;
     const cost = Number(document.getElementById(`sl-cost-${i}`)?.value) || 0;
@@ -296,7 +643,7 @@ const Sales = (() => {
       totSale    += qty * sell;
       totCost    += qty * cost;
       totProfit  += qty * (sell - cost);
-      totDiscount += mrp - sell;
+      totDiscount += (mrp - sell) * qty;
     }
     const set = (id, val) => {
       const el = document.getElementById(id);
@@ -308,6 +655,13 @@ const Sales = (() => {
     set('txn-total-discount',totDiscount);
   }
 
+  // ── Detect current mode ───────────────────────────────────
+  function getCurrentMode() {
+    // Check if same-mode shared fields exist
+    if (document.getElementById('sl-shared-brand')) return 'same';
+    return 'different';
+  }
+
   // ── Show / hide form ──────────────────────────────────────
   function showForm(show) {
     const card = document.getElementById('sale-form-card');
@@ -316,13 +670,13 @@ const Sales = (() => {
     btn.textContent = show ? '✕ Close Form' : '+ Record Sale';
     if (!show) {
       document.getElementById('sale-form').reset();
-      const now = new Date();
-      document.getElementById('sl-date').value = now.toISOString().slice(0, 10);
-      document.getElementById('sl-time').value = now.toTimeString().slice(0, 5);
+      document.getElementById('sl-date').value = getISTDateStr();
+      document.getElementById('sl-time').value = getISTTimeStr();
       document.getElementById('sale-form-title').textContent = '🛒 Record a Sale';
       document.getElementById('sale-submit-btn').textContent = 'Save Sale';
       document.getElementById('pairs-container').innerHTML = '';
       document.getElementById('txn-summary').style.display = 'none';
+      hideSameModelQuestion();
       editIndex = null;
     }
     if (show) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -340,56 +694,98 @@ const Sales = (() => {
     if (!date || !time)   { App.toast('Please fill in Date and Time.', 'error'); return; }
     if (!pairsTxn)        { App.toast('Please select number of pairs.', 'error'); return; }
 
-    // Validate & collect each pair's data
+    const mode = getCurrentMode();
     const pairRows = [];
-    for (let i = 0; i < pairsTxn; i++) {
-      const brand     = document.getElementById(`sl-brand-${i}`)?.value.trim()    || '';
-      const article   = document.getElementById(`sl-article-${i}`)?.value.trim()  || '';
-      const size      = document.getElementById(`sl-size-${i}`)?.value.trim()     || '';
-      const cat       = document.getElementById(`sl-category-${i}`)?.value        || '';
-      const type      = document.getElementById(`sl-type-${i}`)?.value            || '';
-      const shoeStyle = document.getElementById(`sl-shoestyle-${i}`)?.value       || '';
-      const color     = document.getElementById(`sl-color-${i}`)?.value.trim()    || '';
-      const qty       = Number(document.getElementById(`sl-qty-${i}`)?.value)     || 0;
-      const cost      = Number(document.getElementById(`sl-cost-${i}`)?.value)    || 0;
-      const mrp       = Number(document.getElementById(`sl-mrp-${i}`)?.value)     || 0;
-      const sell      = Number(document.getElementById(`sl-sell-${i}`)?.value)    || 0;
 
-      const label = pairsTxn > 1 ? ` (Pair ${i + 1})` : '';
-      if (!brand)   { App.toast(`Brand missing${label}.`,   'error'); return; }
-      if (!article) { App.toast(`Article missing${label}.`, 'error'); return; }
-      if (!size)    { App.toast(`Size missing${label}.`,    'error'); return; }
-      if (!cat)     { App.toast(`Category missing${label}.`,'error'); return; }
-      if (!type)    { App.toast(`Type missing${label}.`,    'error'); return; }
-      if (!color)   { App.toast(`Color missing${label}.`,   'error'); return; }
-      if (qty < 1)  { App.toast(`Qty must be ≥ 1${label}.`,'error'); return; }
-      if (!cost || !mrp || !sell) { App.toast(`Prices missing${label}.`, 'error'); return; }
-      if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${label}.`, 'error'); return; }
-      if (sell > mrp) { App.toast(`Selling price > MRP${label}.`, 'error'); return; }
+    if (mode === 'same') {
+      // Collect shared fields
+      const brand     = document.getElementById('sl-shared-brand')?.value.trim()    || '';
+      const article   = document.getElementById('sl-shared-article')?.value.trim()  || '';
+      const cat       = document.getElementById('sl-shared-category')?.value        || '';
+      const type      = document.getElementById('sl-shared-type')?.value            || '';
+      const shoeStyle = document.getElementById('sl-shared-shoestyle')?.value       || '';
+      const cost      = Number(document.getElementById('sl-shared-cost')?.value)    || 0;
+      const mrp       = Number(document.getElementById('sl-shared-mrp')?.value)     || 0;
+      const sell      = Number(document.getElementById('sl-shared-sell')?.value)    || 0;
 
-      const totalSale   = qty * sell;
-      const totalCost   = qty * cost;
-      const profitPair  = sell - cost;
-      const totalProfit = qty * profitPair;
-      const discount    = mrp - sell;
+      if (!brand)   { App.toast('Brand missing (shared).', 'error'); return; }
+      if (!article) { App.toast('Article missing (shared).', 'error'); return; }
+      if (!cat)     { App.toast('Category missing (shared).', 'error'); return; }
+      if (!type)    { App.toast('Type missing (shared).', 'error'); return; }
+      if (type === 'Shoe' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
+      if (!cost || !mrp || !sell) { App.toast('Prices missing (shared).', 'error'); return; }
+      if (sell > mrp) { App.toast('Selling price > MRP (shared).', 'error'); return; }
 
-      pairRows.push([
-        date, time, brand, article, Number(size), cat, type, shoeStyle, color,
-        pairsTxn, qty, cost, mrp, sell,
-        totalSale, totalCost, profitPair, totalProfit, discount
-      ]);
+      for (let i = 0; i < pairsTxn; i++) {
+        const size  = document.getElementById(`sl-size-var-${i}`)?.value.trim()  || '';
+        const color = document.getElementById(`sl-color-var-${i}`)?.value.trim() || '';
+        const qty   = Number(document.getElementById(`sl-qty-var-${i}`)?.value)  || 0;
+        const label = ` (Pair ${i + 1})`;
+        if (!size)  { App.toast(`Size missing${label}.`, 'error'); return; }
+        if (!color) { App.toast(`Color missing${label}.`, 'error'); return; }
+        if (qty < 1){ App.toast(`Qty must be ≥ 1${label}.`, 'error'); return; }
+
+        const totalSale   = qty * sell;
+        const totalCost   = qty * cost;
+        const profitPair  = sell - cost;
+        const totalProfit = qty * profitPair;
+        const discount    = mrp - sell;
+
+        pairRows.push([
+          date, time, brand, article, Number(size), cat, type, shoeStyle, color,
+          pairsTxn, qty, cost, mrp, sell,
+          totalSale, totalCost, profitPair, totalProfit, discount
+        ]);
+      }
+    } else {
+      // Different mode
+      for (let i = 0; i < pairsTxn; i++) {
+        const brand     = document.getElementById(`sl-brand-${i}`)?.value.trim()    || '';
+        const article   = document.getElementById(`sl-article-${i}`)?.value.trim()  || '';
+        const size      = document.getElementById(`sl-size-${i}`)?.value.trim()     || '';
+        const cat       = document.getElementById(`sl-category-${i}`)?.value        || '';
+        const type      = document.getElementById(`sl-type-${i}`)?.value            || '';
+        const shoeStyle = document.getElementById(`sl-shoestyle-${i}`)?.value       || '';
+        const color     = document.getElementById(`sl-color-${i}`)?.value.trim()    || '';
+        const qty       = Number(document.getElementById(`sl-qty-${i}`)?.value)     || 0;
+        const cost      = Number(document.getElementById(`sl-cost-${i}`)?.value)    || 0;
+        const mrp       = Number(document.getElementById(`sl-mrp-${i}`)?.value)     || 0;
+        const sell      = Number(document.getElementById(`sl-sell-${i}`)?.value)    || 0;
+
+        const label = pairsTxn > 1 ? ` (Pair ${i + 1})` : '';
+        if (!brand)   { App.toast(`Brand missing${label}.`,   'error'); return; }
+        if (!article) { App.toast(`Article missing${label}.`, 'error'); return; }
+        if (!size)    { App.toast(`Size missing${label}.`,    'error'); return; }
+        if (!cat)     { App.toast(`Category missing${label}.`,'error'); return; }
+        if (!type)    { App.toast(`Type missing${label}.`,    'error'); return; }
+        if (!color)   { App.toast(`Color missing${label}.`,   'error'); return; }
+        if (qty < 1)  { App.toast(`Qty must be ≥ 1${label}.`,'error'); return; }
+        if (!cost || !mrp || !sell) { App.toast(`Prices missing${label}.`, 'error'); return; }
+        if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${label}.`, 'error'); return; }
+        if (sell > mrp) { App.toast(`Selling price > MRP${label}.`, 'error'); return; }
+
+        const totalSale   = qty * sell;
+        const totalCost   = qty * cost;
+        const profitPair  = sell - cost;
+        const totalProfit = qty * profitPair;
+        const discount    = mrp - sell;
+
+        pairRows.push([
+          date, time, brand, article, Number(size), cat, type, shoeStyle, color,
+          pairsTxn, qty, cost, mrp, sell,
+          totalSale, totalCost, profitPair, totalProfit, discount
+        ]);
+      }
     }
 
-    // ── Save mode: edit (single row) vs add (all pair rows) ──
+    // ── Save ──
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
       if (editIndex !== null) {
-        // Edit always updates just the one row
         await API.updateSale(editIndex, pairRows[0]);
         allRows[editIndex] = pairRows[0];
         App.toast('Sale record updated!', 'success');
       } else {
-        // Add all pair rows sequentially
         for (const row of pairRows) {
           await API.addSale(row);
           allRows.push(row);
@@ -415,6 +811,7 @@ const Sales = (() => {
   function renderTable() {
     const search = (document.getElementById('ff-search')?.value || '').toLowerCase();
     const cat    = document.getElementById('ff-category')?.value || '';
+    const type   = document.getElementById('ff-type')?.value    || '';
     const from   = document.getElementById('ff-from')?.value || '';
     const to     = document.getElementById('ff-to')?.value   || '';
 
@@ -425,9 +822,10 @@ const Sales = (() => {
       const color   = String(r[8] || '').toLowerCase();
       const matchSearch = !search || brand.includes(search) || article.includes(search) || color.includes(search);
       const matchCat    = !cat    || r[5] === cat;
+      const matchType   = !type   || r[6] === type;
       const matchFrom   = !from   || dStr >= from;
       const matchTo     = !to     || dStr <= to;
-      return matchSearch && matchCat && matchFrom && matchTo;
+      return matchSearch && matchCat && matchType && matchFrom && matchTo;
     });
 
     document.getElementById('sales-count').textContent = `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
@@ -494,6 +892,7 @@ const Sales = (() => {
   function clearFilters() {
     ['ff-search','ff-from','ff-to'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.getElementById('ff-category').value = '';
+    document.getElementById('ff-type').value = '';
     renderTable();
   }
 
@@ -503,13 +902,15 @@ const Sales = (() => {
     const r = allRows[origIdx];
     showForm(true);
 
-    // Set txn header
     document.getElementById('sl-date').value      = r[0]  || '';
     document.getElementById('sl-time').value      = r[1]  || '';
     document.getElementById('sl-pairs-txn').value = r[9]  || 1;
 
-    // Build exactly 1 pair section (editing one row at a time)
-    buildPairSections(1);
+    // Edit always uses "different" mode with 1 pair section
+    hideSameModelQuestion();
+    const container = document.getElementById('pairs-container');
+    container.innerHTML = pairSectionHTML(0, 1);
+    attachDifferentModeListeners(0, 1);
 
     document.getElementById('sl-brand-0').value     = r[2]  || '';
     document.getElementById('sl-article-0').value   = r[3]  || '';
@@ -529,6 +930,7 @@ const Sales = (() => {
 
     document.getElementById('sale-form-title').textContent  = '✏️ Edit Sale Record';
     document.getElementById('sale-submit-btn').textContent  = 'Update Sale';
+    document.getElementById('txn-summary').style.display = 'none';
     updatePairCalc(0);
   }
 
