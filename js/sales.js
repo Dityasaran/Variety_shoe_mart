@@ -466,6 +466,47 @@ const Sales = (() => {
       document.getElementById(id)?.addEventListener('input', () => updateSameModeCalc(n));
     });
 
+    // ── Auto-propagate Pair 1's size & color to all other pairs ──
+    // When Pair 1 is typed, copy value to pairs that are still empty OR
+    // still have the same value as Pair 1 (i.e. were auto-filled, not manually changed)
+    const sizeEl0  = document.getElementById('sl-size-var-0');
+    const colorEl0 = document.getElementById('sl-color-var-0');
+
+    if (sizeEl0) {
+      sizeEl0.addEventListener('input', function () {
+        const newVal = this.value;
+        for (let j = 1; j < n; j++) {
+          const el = document.getElementById(`sl-size-var-${j}`);
+          if (el && (el.value === '' || el.dataset.synced !== 'false')) {
+            el.value = newVal;
+            el.dataset.synced = 'true';
+          }
+        }
+        updateSameModeCalc(n);
+      });
+    }
+
+    if (colorEl0) {
+      colorEl0.addEventListener('input', function () {
+        const newVal = this.value;
+        for (let j = 1; j < n; j++) {
+          const el = document.getElementById(`sl-color-var-${j}`);
+          if (el && (el.value === '' || el.dataset.synced !== 'false')) {
+            el.value = newVal;
+            el.dataset.synced = 'true';
+          }
+        }
+      });
+    }
+
+    // Mark a pair as manually overridden when user directly edits it (not Pair 1)
+    for (let i = 1; i < n; i++) {
+      const sEl = document.getElementById(`sl-size-var-${i}`);
+      const cEl = document.getElementById(`sl-color-var-${i}`);
+      if (sEl) sEl.addEventListener('input', function () { this.dataset.synced = 'false'; updateSameModeCalc(n); });
+      if (cEl) cEl.addEventListener('input', function () { this.dataset.synced = 'false'; });
+    }
+
     for (let i = 0; i < n; i++) {
       document.getElementById(`sl-qty-var-${i}`)?.addEventListener('input', () => updateSameModeCalc(n));
     }

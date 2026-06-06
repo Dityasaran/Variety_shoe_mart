@@ -374,6 +374,27 @@ const Stock = (() => {
       sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
       if (this.value !== 'Shoe') document.getElementById('se-shared-shoestyle').value = '';
     });
+
+    // ── Auto-propagate Entry 1's size to all other entries ──
+    const sizeEl0 = document.getElementById('se-size-var-0');
+    if (sizeEl0) {
+      sizeEl0.addEventListener('input', function () {
+        const newVal = this.value;
+        for (let j = 1; j < n; j++) {
+          const el = document.getElementById(`se-size-var-${j}`);
+          if (el && (el.value === '' || el.dataset.synced !== 'false')) {
+            el.value = newVal;
+            el.dataset.synced = 'true';
+          }
+        }
+      });
+    }
+
+    // Mark later entries as manually overridden if user edits them directly
+    for (let i = 1; i < n; i++) {
+      const sEl = document.getElementById(`se-size-var-${i}`);
+      if (sEl) sEl.addEventListener('input', function () { this.dataset.synced = 'false'; });
+    }
   }
 
   // ── Different Mode HTML ───────────────────────────────────
@@ -840,27 +861,37 @@ const Stock = (() => {
       confirmBtn.disabled = true; confirmBtn.textContent = 'Saving…';
 
       try {
-        // 1. Add sale record
+        // 1. Add sale record to Google Sheets
         await API.addSale(saleRow);
 
-        // 2. Update or delete stock
+        // 2. Update shared App salesRows store
+        App.addSaleRow(saleRow);
+
+        // 3. Update or delete stock in Google Sheets + shared store
         const newQty = stockQty - qtyToSell;
         if (newQty <= 0) {
           await API.deleteStock(origIdx);
           allRows.splice(origIdx, 1);
+          App.removeStockRow(origIdx);
         } else {
           const updatedStockRow = [...r];
           updatedStockRow[8] = newQty;
           await API.updateStock(origIdx, updatedStockRow);
           allRows[origIdx] = updatedStockRow;
+          App.updateStockRow(origIdx, updatedStockRow);
         }
 
         closeModal();
-        renderTable();
+
+        // 4. Show toast then navigate to Sales Management
         App.toast(
-          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[1]} ${r[2]} (Size ${r[3]}) — moved to Sales!`,
+          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[1]} ${r[2]} (Size ${r[3]}) — added to Sales!`,
           'success'
         );
+
+        // Small delay so user sees the toast before navigating
+        setTimeout(() => App.navigate('sales'), 800);
+
       } catch (err) {
         App.toast('Error: ' + err.message, 'error');
         confirmBtn.disabled = false; confirmBtn.textContent = '✅ Confirm Sale';

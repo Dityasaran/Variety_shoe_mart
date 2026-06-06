@@ -98,6 +98,19 @@ const App = (() => {
     document.getElementById('sidebar-overlay').classList.remove('open');
   }
 
+  // ── Push a new sale row into shared store (used by Stock sell feature) ──
+  function addSaleRow(row) {
+    salesRows.push(row);
+  }
+
+  // ── Remove / update a stock row index in shared store ───────────
+  function removeStockRow(idx) {
+    stockRows.splice(idx, 1);
+  }
+  function updateStockRow(idx, row) {
+    stockRows[idx] = row;
+  }
+
   // ── Refresh ───────────────────────────────────────────────
   async function refresh() {
     document.getElementById('view-container').innerHTML =
@@ -153,7 +166,7 @@ const App = (() => {
     if (ok) navigate('dashboard');
   }
 
-  return { init, navigate, refresh, toast };
+  return { init, navigate, refresh, toast, addSaleRow, removeStockRow, updateStockRow };
 })();
 
 // ── Boot ──────────────────────────────────────────────────────
