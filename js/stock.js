@@ -365,11 +365,11 @@ const Stock = (() => {
           </div>
           <div class="form-group">
             <label for="se-shared-cost">Wholesale Rate / pair (₹) *</label>
-            <input type="number" id="se-shared-cost" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="se-shared-cost" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="se-shared-mrp">MRP / pair (₹) *</label>
-            <input type="number" id="se-shared-mrp" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="se-shared-mrp" placeholder="0" min="0" step="1" required />
           </div>
         </div>
       </div>
@@ -479,11 +479,11 @@ const Stock = (() => {
           </div>
           <div class="form-group">
             <label for="se-cost-${i}">Wholesale Rate / pair (₹) *</label>
-            <input type="number" id="se-cost-${i}" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="se-cost-${i}" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="se-mrp-${i}">MRP / pair (₹) *</label>
-            <input type="number" id="se-mrp-${i}" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="se-mrp-${i}" placeholder="0" min="0" step="1" required />
           </div>
         </div>
       </div>
@@ -795,7 +795,7 @@ const Stock = (() => {
             </div>
             <div class="form-group">
               <label for="sell-modal-price">Selling Price / pair (₹) *</label>
-              <input type="number" id="sell-modal-price" placeholder="0.00" min="0" step="0.01" />
+              <input type="number" id="sell-modal-price" placeholder="0" min="0" step="1" />
             </div>
           </div>
 
@@ -839,7 +839,7 @@ const Stock = (() => {
       const qty   = Number(document.getElementById('sell-modal-qty')?.value)   || 0;
       const price = Number(document.getElementById('sell-modal-price')?.value) || 0;
       const cost  = Number(r[10]) || 0;
-      const inr   = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+      const inr   = n => '₹' + Number(n).toLocaleString('en-IN');
       const profitPair  = price - cost;
       const totalSale   = qty * price;
       const totalProfit = qty * profitPair;

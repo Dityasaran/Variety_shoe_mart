@@ -15,7 +15,7 @@ const Sales = (() => {
   const CATS        = ['Men', 'Women', 'Kids'];
   const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const SHOE_STYLES = ['Lace', 'Laceless'];
-  const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   // ── IST helpers ──────────────────────────────────────────
   function getISTDateStr() {
@@ -427,15 +427,15 @@ const Sales = (() => {
           </div>
           <div class="form-group">
             <label for="sl-shared-cost">Wholesale Rate / pair (₹) *</label>
-            <input type="number" id="sl-shared-cost" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-shared-cost" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="sl-shared-mrp">MRP / pair (₹) *</label>
-            <input type="number" id="sl-shared-mrp" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-shared-mrp" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="sl-shared-sell">Selling Price / pair (₹) *</label>
-            <input type="number" id="sl-shared-sell" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-shared-sell" placeholder="0" min="0" step="1" required />
           </div>
         </div>
       </div>
@@ -635,15 +635,15 @@ const Sales = (() => {
           </div>
           <div class="form-group">
             <label for="sl-cost-${i}">Wholesale Rate / pair (₹) *</label>
-            <input type="number" id="sl-cost-${i}" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-cost-${i}" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="sl-mrp-${i}">MRP / pair (₹) *</label>
-            <input type="number" id="sl-mrp-${i}" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-mrp-${i}" placeholder="0" min="0" step="1" required />
           </div>
           <div class="form-group">
             <label for="sl-sell-${i}">Selling Price / pair (₹) *</label>
-            <input type="number" id="sl-sell-${i}" placeholder="0.00" min="0" step="0.01" required />
+            <input type="number" id="sl-sell-${i}" placeholder="0" min="0" step="1" required />
           </div>
         </div>
 

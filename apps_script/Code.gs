@@ -40,7 +40,7 @@ function formatCell(cell) {
   }
   // Round numbers to 2 decimal places to eliminate floating-point noise
   if (typeof cell === 'number' && isFinite(cell)) {
-    return Math.round(cell * 100) / 100;
+    return Math.round(cell);
   }
   return cell;
 }
