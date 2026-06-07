@@ -528,9 +528,10 @@ const Stock = (() => {
     const btn = document.getElementById('stock-submit-btn');
 
     const date  = document.getElementById('s-date').value.trim();
+    const time  = document.getElementById('s-time').value.trim();
     const count = Number(document.getElementById('s-entries-count').value) || 0;
 
-    if (!date)  { App.toast('Please fill in Date.', 'error'); return; }
+    if (!date || !time)  { App.toast('Please fill in Date and Time.', 'error'); return; }
     if (!count) { App.toast('Please select number of entries.', 'error'); return; }
 
     const mode = getCurrentMode();
