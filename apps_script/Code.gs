@@ -8,8 +8,8 @@
 const SHEET_ID = '1UsbbXg0aYAXy3VO2xgvSa6VrpjP0VtjwiEyCAfqaq-s';
 
 const STOCK_HEADERS = [
-  'Date', 'Brand', 'Article/Model', 'Size', 'Category',
-  'Type', 'Shoe Style', 'Color', 'Quantity', 'Cost Price (INR)', 'MRP (INR)'
+  'Date', 'Time', 'Brand', 'Article/Model', 'Size', 'Category',
+  'Type', 'Shoe Style', 'Color', 'Quantity', 'Wholesale Rate (INR)', 'MRP (INR)'
 ];
 
 const SALES_HEADERS = [
@@ -69,7 +69,15 @@ function getOrCreateSheet(ss, name, headers) {
 function fixAllHeaders() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
 
-  let stock = ss.getSheetByName('stock_reading') || ss.insertSheet('stock_reading');
+  let stock = ss.getSheetByName('stock_reading');
+  if (stock) {
+    const firstRow = stock.getLastColumn() > 0 ? stock.getRange(1, 1, 1, stock.getLastColumn()).getValues()[0] : [];
+    if (firstRow.length > 1 && firstRow[1] !== 'Time') {
+      stock.insertColumnAfter(1); // Inserts blank column B for 'Time' to protect existing data
+    }
+  } else {
+    stock = ss.insertSheet('stock_reading');
+  }
   stock.getRange(1, 1, 1, STOCK_HEADERS.length).setValues([STOCK_HEADERS]);
   stock.getRange(1, 1, 1, STOCK_HEADERS.length).setFontWeight('bold');
   Logger.log('✅ stock_reading headers fixed: ' + STOCK_HEADERS.join(', '));

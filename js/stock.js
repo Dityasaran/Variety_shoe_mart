@@ -18,7 +18,23 @@ const Stock = (() => {
   function getISTDateStr() {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   }
+  function getISTTimeStr() {
+    return new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+  }
   // ── Safe display formatters for data coming from Google Sheets ───
+  function fmtTime(val) {
+    if (!val) return '—';
+    const s = String(val);
+    if (/^\d{2}:\d{2}/.test(s)) return s.slice(0, 5);
+    try {
+      const d = new Date(s);
+      if (d.getFullYear() < 1970) {
+        return d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+      return d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+    } catch { return s; }
+  }
+
   function fmtDate(val) {
     if (!val) return '—';
     const s = String(val);
@@ -48,6 +64,10 @@ const Stock = (() => {
             <div class="form-group">
               <label for="s-date">Date of Entry *</label>
               <input type="date" id="s-date" required />
+            </div>
+            <div class="form-group">
+              <label for="s-time">Time of Entry *</label>
+              <input type="time" id="s-time" required />
             </div>
             <div class="form-group">
               <label for="s-entries-count">How many size entries? *</label>
@@ -115,7 +135,7 @@ const Stock = (() => {
           <table id="stock-table">
             <thead>
               <tr>
-                <th>#</th><th>Date</th><th>Brand</th><th>Article</th>
+                <th>#</th><th>Date</th><th>Time</th><th>Brand</th><th>Article</th>
                 <th>Size</th><th>Cat.</th><th>Type</th><th>Style</th>
                 <th>Color</th><th>Qty</th>
                 <th>Wholesale Rate</th><th>MRP/pair</th><th>Total Wholesale Value</th><th>Actions</th>
@@ -129,6 +149,7 @@ const Stock = (() => {
 
     // Set today's date (IST)
     document.getElementById('s-date').value = getISTDateStr();
+    document.getElementById('s-time').value = getISTTimeStr();
 
     // Entries count change
     document.getElementById('s-entries-count').addEventListener('change', function () {
@@ -491,6 +512,7 @@ const Stock = (() => {
     if (!show) {
       document.getElementById('stock-form').reset();
       document.getElementById('s-date').value = getISTDateStr();
+    document.getElementById('s-time').value = getISTTimeStr();
       document.getElementById('stock-form-title').textContent = '➕ Add New Stock Entry';
       document.getElementById('stock-submit-btn').textContent = 'Save Stock Entry';
       hideStockSameQuestion();
@@ -541,7 +563,7 @@ const Stock = (() => {
         if (!size)  { App.toast(`Size missing${lbl}.`, 'error'); return; }
         if (qty < 0){ App.toast(`Qty invalid${lbl}.`, 'error'); return; }
 
-        entryRows.push([date, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
+        entryRows.push([date, time, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
       }
 
     } else {
@@ -569,7 +591,7 @@ const Stock = (() => {
         if (!cost || !mrp) { App.toast(`Prices missing${lbl}.`, 'error'); return; }
         if (mrp < cost)    { App.toast(`MRP < Wholesale Rate${lbl}.`, 'error'); return; }
 
-        entryRows.push([date, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
+        entryRows.push([date, time, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
       }
     }
 
@@ -612,12 +634,12 @@ const Stock = (() => {
 
     const filtered = allRows.filter(r => {
       const dStr    = String(r[0] || '').slice(0, 10);
-      const brand   = String(r[1] || '').toLowerCase();
-      const article = String(r[2] || '').toLowerCase();
-      const color   = String(r[7] || '').toLowerCase();
+      const brand   = String(r[2] || '').toLowerCase();
+      const article = String(r[3] || '').toLowerCase();
+      const color   = String(r[8] || '').toLowerCase();
       const matchSearch = !search || brand.includes(search) || article.includes(search) || color.includes(search);
-      const matchCat    = !cat  || r[4] === cat;
-      const matchType   = !type || r[5] === type;
+      const matchCat    = !cat  || r[5] === cat;
+      const matchType   = !type || r[6] === type;
       const matchFrom   = !from || dStr >= from;
       const matchTo     = !to   || dStr <= to;
       return matchSearch && matchCat && matchType && matchFrom && matchTo;
@@ -633,27 +655,28 @@ const Stock = (() => {
 
     tbody.innerHTML = filtered.map((r, fi) => {
       const origIdx = allRows.indexOf(r);
-      const qty  = Number(r[8]) || 0;
-      const cost = Number(r[9]) || 0;
+      const qty  = Number(r[9]) || 0;
+      const cost = Number(r[10]) || 0;
       const totalCostVal = qty * cost;
       const qtyBadge = qty <= 2
         ? `<span class="badge badge-red">${qty}</span>`
         : `<span style="color:var(--text)">${qty}</span>`;
-      const styleCell = r[6] ? `<span class="badge badge-gold">${r[6]}</span>` : '<span style="color:var(--text3)">—</span>';
+      const styleCell = r[7] ? `<span class="badge badge-gold">${r[7]}</span>` : '<span style="color:var(--text3)">—</span>';
       return `
         <tr>
           <td>${fi + 1}</td>
           <td>${fmtDate(r[0])}</td>
-          <td><strong style="color:var(--text)">${r[1] || '—'}</strong></td>
-          <td>${r[2] || '—'}</td>
+          <td style="color:var(--text3)">${fmtTime(r[1])}</td>
+          <td><strong style="color:var(--text)">${r[2] || '—'}</strong></td>
           <td>${r[3] || '—'}</td>
-          <td><span class="badge badge-blue">${r[4] || '—'}</span></td>
-          <td><span class="badge badge-orange">${r[5] || '—'}</span></td>
+          <td>${r[4] || '—'}</td>
+          <td><span class="badge badge-blue">${r[5] || '—'}</span></td>
+          <td><span class="badge badge-orange">${r[6] || '—'}</span></td>
           <td>${styleCell}</td>
-          <td>${r[7] || '—'}</td>
+          <td>${r[8] || '—'}</td>
           <td>${qtyBadge}</td>
-          <td>₹${Number(r[9] || 0).toLocaleString('en-IN')}</td>
           <td>₹${Number(r[10] || 0).toLocaleString('en-IN')}</td>
+          <td>₹${Number(r[11] || 0).toLocaleString('en-IN')}</td>
           <td style="color:var(--accent);font-weight:700">₹${totalCostVal.toLocaleString('en-IN')}</td>
           <td>
             <div class="action-btns">
@@ -691,18 +714,19 @@ const Stock = (() => {
     attachDiffListeners(0);
 
     document.getElementById('s-date').value         = r[0] || '';
-    document.getElementById('se-brand-0').value     = r[1] || '';
-    document.getElementById('se-article-0').value   = r[2] || '';
-    document.getElementById('se-size-0').value      = r[3] || '';
-    document.getElementById('se-category-0').value  = r[4] || '';
-    document.getElementById('se-type-0').value      = r[5] || '';
-    document.getElementById('se-shoestyle-0').value = r[6] || '';
-    document.getElementById('se-color-0').value     = r[7] || '';
-    document.getElementById('se-qty-0').value       = r[8] || '';
-    document.getElementById('se-cost-0').value      = r[9] || '';
-    document.getElementById('se-mrp-0').value       = r[10] || '';
+    document.getElementById('s-time').value         = r[1] || '';
+    document.getElementById('se-brand-0').value     = r[2] || '';
+    document.getElementById('se-article-0').value   = r[3] || '';
+    document.getElementById('se-size-0').value      = r[4] || '';
+    document.getElementById('se-category-0').value  = r[5] || '';
+    document.getElementById('se-type-0').value      = r[6] || '';
+    document.getElementById('se-shoestyle-0').value = r[7] || '';
+    document.getElementById('se-color-0').value     = r[8] || '';
+    document.getElementById('se-qty-0').value       = r[9] || '';
+    document.getElementById('se-cost-0').value      = r[10] || '';
+    document.getElementById('se-mrp-0').value       = r[11] || '';
 
-    if (r[5] === 'Shoe') {
+    if (r[6] === 'Shoe') {
       document.getElementById('se-shoestyle-group-0').style.display = 'flex';
     }
 
@@ -725,8 +749,8 @@ const Stock = (() => {
   // ── Sell: open quick-sell modal ───────────────────────────
   function sell(origIdx) {
     const r = allRows[origIdx];
-    const stockQty = Number(r[8]) || 0;
-    const mrp      = Number(r[10]) || 0;
+    const stockQty = Number(r[9]) || 0;
+    const mrp      = Number(r[11]) || 0;
 
     // Remove any existing modal
     document.getElementById('sell-modal-overlay')?.remove();
@@ -743,15 +767,15 @@ const Stock = (() => {
         <div class="modal-body">
           <!-- Stock item summary -->
           <div class="modal-stock-info">
-            <div class="modal-stock-info-row"><span>Brand</span><strong>${r[1] || '—'}</strong></div>
-            <div class="modal-stock-info-row"><span>Article</span><strong>${r[2] || '—'}</strong></div>
-            <div class="modal-stock-info-row"><span>Size</span><strong>${r[3] || '—'}</strong></div>
-            <div class="modal-stock-info-row"><span>Color</span><strong>${r[7] || '—'}</strong></div>
-            <div class="modal-stock-info-row"><span>Category</span><strong>${r[4] || '—'}</strong></div>
-            <div class="modal-stock-info-row"><span>Type</span><strong>${r[5] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Brand</span><strong>${r[2] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Article</span><strong>${r[3] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Size</span><strong>${r[4] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Color</span><strong>${r[8] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Category</span><strong>${r[5] || '—'}</strong></div>
+            <div class="modal-stock-info-row"><span>Type</span><strong>${r[6] || '—'}</strong></div>
             <div class="modal-stock-info-row"><span>Stock Available</span><strong style="color:var(--green)">${stockQty} pairs</strong></div>
-            <div class="modal-stock-info-row"><span>Wholesale Rate</span><strong>₹${(Number(r[9])||0).toLocaleString('en-IN')}</strong></div>
-            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${(Number(r[10])||0).toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>Wholesale Rate</span><strong>₹${(Number(r[10])||0).toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${(Number(r[11])||0).toLocaleString('en-IN')}</strong></div>
           </div>
 
           <!-- Sale details -->
@@ -813,7 +837,7 @@ const Stock = (() => {
     const calcSell = () => {
       const qty   = Number(document.getElementById('sell-modal-qty')?.value)   || 0;
       const price = Number(document.getElementById('sell-modal-price')?.value) || 0;
-      const cost  = Number(r[9]) || 0;
+      const cost  = Number(r[10]) || 0;
       const inr   = n => '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
       const profitPair  = price - cost;
       const totalSale   = qty * price;
@@ -843,8 +867,8 @@ const Stock = (() => {
       const saleTime  = document.getElementById('sell-modal-time').value.trim();
       const qtyToSell = Number(document.getElementById('sell-modal-qty').value) || 0;
       const sellPrice = Number(document.getElementById('sell-modal-price').value) || 0;
-      const costPrice = Number(r[9]) || 0;
-      const mrpPrice  = Number(r[10]) || 0;
+      const costPrice = Number(r[10]) || 0;
+      const mrpPrice  = Number(r[11]) || 0;
 
       if (!saleDate) { App.toast('Please enter sale date.', 'error'); return; }
       if (!saleTime) { App.toast('Please enter sale time.', 'error'); return; }
@@ -862,7 +886,7 @@ const Stock = (() => {
       // Sale row: [Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount]
       const saleRow = [
         saleDate, saleTime,
-        r[1], r[2], r[3], r[4], r[5], r[6] || '', r[7],
+        r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8],
         1, qtyToSell, costPrice, mrpPrice, sellPrice,
         totalSale, totalCost, profitPair, totalProfit, discount
       ];
@@ -895,7 +919,7 @@ const Stock = (() => {
 
         // 4. Show toast then navigate to Sales Management
         App.toast(
-          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[1]} ${r[2]} (Size ${r[3]}) — added to Sales!`,
+          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[2]} ${r[3]} (Size ${r[4]}) — added to Sales!`,
           'success'
         );
 
