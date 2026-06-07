@@ -910,7 +910,7 @@ const Stock = (() => {
           App.removeStockRow(origIdx);
         } else {
           const updatedStockRow = [...r];
-          updatedStockRow[8] = newQty;
+          updatedStockRow[9] = newQty;
           await API.updateStock(origIdx, updatedStockRow);
           allRows[origIdx] = updatedStockRow;
           App.updateStockRow(origIdx, updatedStockRow);
