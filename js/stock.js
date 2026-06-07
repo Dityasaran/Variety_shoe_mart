@@ -18,6 +18,15 @@ const Stock = (() => {
   function getISTDateStr() {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   }
+  // ── Safe display formatters for data coming from Google Sheets ───
+  function fmtDate(val) {
+    if (!val) return '—';
+    const s = String(val);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    try {
+      return new Date(s).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    } catch { return s; }
+  }
 
   // ── Render ────────────────────────────────────────────────
   function render(rows) {
@@ -634,7 +643,7 @@ const Stock = (() => {
       return `
         <tr>
           <td>${fi + 1}</td>
-          <td>${r[0] || '—'}</td>
+          <td>${fmtDate(r[0])}</td>
           <td><strong style="color:var(--text)">${r[1] || '—'}</strong></td>
           <td>${r[2] || '—'}</td>
           <td>${r[3] || '—'}</td>
