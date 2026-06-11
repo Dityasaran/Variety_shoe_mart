@@ -7,11 +7,11 @@
 
 const Stock = (() => {
 
-  let allRows   = [];
+  let allRows = [];
   let editIndex = null;
 
-  const CATS        = ['Men', 'Women', 'Kids'];
-  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
+  const CATS = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
+  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const SHOE_STYLES = ['Lace', 'Laceless'];
 
   // ── IST date helper ───────────────────────────────────────
@@ -73,7 +73,7 @@ const Stock = (() => {
               <label for="s-entries-count">How many size entries? *</label>
               <select id="s-entries-count" required>
                 <option value="">Select count</option>
-                ${[1,2,3,4,5,6,7,8].map(n => `<option value="${n}">${n} size entr${n > 1 ? 'ies' : 'y'}</option>`).join('')}
+                ${[1, 2, 3, 4, 5, 6, 7, 8].map(n => `<option value="${n}">${n} size entr${n > 1 ? 'ies' : 'y'}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -186,9 +186,9 @@ const Stock = (() => {
     q.style.display = 'block';
 
     const yesBtn = document.getElementById('stock-btn-same-yes');
-    const noBtn  = document.getElementById('stock-btn-same-no');
+    const noBtn = document.getElementById('stock-btn-same-no');
     const newYes = yesBtn.cloneNode(true);
-    const newNo  = noBtn.cloneNode(true);
+    const newNo = noBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYes, yesBtn);
     noBtn.parentNode.replaceChild(newNo, noBtn);
 
@@ -229,30 +229,30 @@ const Stock = (() => {
       if (document.getElementById(`se-brand-${i}`)) {
         // Different mode
         data.push({
-          brand:     document.getElementById(`se-brand-${i}`)?.value || '',
-          article:   document.getElementById(`se-article-${i}`)?.value || '',
-          size:      document.getElementById(`se-size-${i}`)?.value || '',
-          category:  document.getElementById(`se-category-${i}`)?.value || '',
-          type:      document.getElementById(`se-type-${i}`)?.value || '',
+          brand: document.getElementById(`se-brand-${i}`)?.value || '',
+          article: document.getElementById(`se-article-${i}`)?.value || '',
+          size: document.getElementById(`se-size-${i}`)?.value || '',
+          category: document.getElementById(`se-category-${i}`)?.value || '',
+          type: document.getElementById(`se-type-${i}`)?.value || '',
           shoeStyle: document.getElementById(`se-shoestyle-${i}`)?.value || '',
-          color:     document.getElementById(`se-color-${i}`)?.value || '',
-          qty:       document.getElementById(`se-qty-${i}`)?.value || '',
-          cost:      document.getElementById(`se-cost-${i}`)?.value || '',
-          mrp:       document.getElementById(`se-mrp-${i}`)?.value || '',
+          color: document.getElementById(`se-color-${i}`)?.value || '',
+          qty: document.getElementById(`se-qty-${i}`)?.value || '',
+          cost: document.getElementById(`se-cost-${i}`)?.value || '',
+          mrp: document.getElementById(`se-mrp-${i}`)?.value || '',
         });
       } else {
         // Same mode variant
         data.push({
-          brand:     document.getElementById('se-shared-brand')?.value || '',
-          article:   document.getElementById('se-shared-article')?.value || '',
-          size:      document.getElementById(`se-size-var-${i}`)?.value || '',
-          category:  document.getElementById('se-shared-category')?.value || '',
-          type:      document.getElementById('se-shared-type')?.value || '',
+          brand: document.getElementById('se-shared-brand')?.value || '',
+          article: document.getElementById('se-shared-article')?.value || '',
+          size: document.getElementById(`se-size-var-${i}`)?.value || '',
+          category: document.getElementById('se-shared-category')?.value || '',
+          type: document.getElementById('se-shared-type')?.value || '',
           shoeStyle: document.getElementById('se-shared-shoestyle')?.value || '',
-          color:     document.getElementById('se-shared-color')?.value || '',
-          qty:       document.getElementById(`se-qty-var-${i}`)?.value || '',
-          cost:      document.getElementById('se-shared-cost')?.value || '',
-          mrp:       document.getElementById('se-shared-mrp')?.value || '',
+          color: document.getElementById('se-shared-color')?.value || '',
+          qty: document.getElementById(`se-qty-var-${i}`)?.value || '',
+          cost: document.getElementById('se-shared-cost')?.value || '',
+          mrp: document.getElementById('se-shared-mrp')?.value || '',
         });
       }
       i++;
@@ -283,14 +283,14 @@ const Stock = (() => {
 
   function restoreSharedFields(d) {
     const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    set('se-shared-brand',     d.brand);
-    set('se-shared-article',   d.article);
-    set('se-shared-category',  d.category);
-    set('se-shared-type',      d.type);
+    set('se-shared-brand', d.brand);
+    set('se-shared-article', d.article);
+    set('se-shared-category', d.category);
+    set('se-shared-type', d.type);
     set('se-shared-shoestyle', d.shoeStyle);
-    set('se-shared-color',     d.color);
-    set('se-shared-cost',      d.cost);
-    set('se-shared-mrp',       d.mrp);
+    set('se-shared-color', d.color);
+    set('se-shared-cost', d.cost);
+    set('se-shared-mrp', d.mrp);
     if (d.type === 'Shoe') {
       const sg = document.getElementById('se-shared-shoestyle-group');
       if (sg) sg.style.display = 'flex';
@@ -300,21 +300,21 @@ const Stock = (() => {
   function restoreSameVariant(i, d) {
     const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
     set(`se-size-var-${i}`, d.size);
-    set(`se-qty-var-${i}`,  d.qty);
+    set(`se-qty-var-${i}`, d.qty);
   }
 
   function restoreDiffEntry(i, d) {
     const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    set(`se-brand-${i}`,     d.brand);
-    set(`se-article-${i}`,   d.article);
-    set(`se-size-${i}`,      d.size);
-    set(`se-category-${i}`,  d.category);
-    set(`se-type-${i}`,      d.type);
+    set(`se-brand-${i}`, d.brand);
+    set(`se-article-${i}`, d.article);
+    set(`se-size-${i}`, d.size);
+    set(`se-category-${i}`, d.category);
+    set(`se-type-${i}`, d.type);
     set(`se-shoestyle-${i}`, d.shoeStyle);
-    set(`se-color-${i}`,     d.color);
-    set(`se-qty-${i}`,       d.qty);
-    set(`se-cost-${i}`,      d.cost);
-    set(`se-mrp-${i}`,       d.mrp);
+    set(`se-color-${i}`, d.color);
+    set(`se-qty-${i}`, d.qty);
+    set(`se-cost-${i}`, d.cost);
+    set(`se-mrp-${i}`, d.mrp);
     if (d.type === 'Shoe') {
       const sg = document.getElementById(`se-shoestyle-group-${i}`);
       if (sg) sg.style.display = 'flex';
@@ -506,13 +506,13 @@ const Stock = (() => {
   // ── Show / hide form ──────────────────────────────────────
   function showForm(show) {
     const card = document.getElementById('stock-form-card');
-    const btn  = document.getElementById('toggle-form-btn');
+    const btn = document.getElementById('toggle-form-btn');
     card.style.display = show ? 'block' : 'none';
     btn.textContent = show ? '✕ Close Form' : '+ Add New Entry';
     if (!show) {
       document.getElementById('stock-form').reset();
       document.getElementById('s-date').value = getISTDateStr();
-    document.getElementById('s-time').value = getISTTimeStr();
+      document.getElementById('s-time').value = getISTTimeStr();
       document.getElementById('stock-form-title').textContent = '➕ Add New Stock Entry';
       document.getElementById('stock-submit-btn').textContent = 'Save Stock Entry';
       hideStockSameQuestion();
@@ -527,11 +527,11 @@ const Stock = (() => {
     e.preventDefault();
     const btn = document.getElementById('stock-submit-btn');
 
-    const date  = document.getElementById('s-date').value.trim();
-    const time  = document.getElementById('s-time').value.trim();
+    const date = document.getElementById('s-date').value.trim();
+    const time = document.getElementById('s-time').value.trim();
     const count = Number(document.getElementById('s-entries-count').value) || 0;
 
-    if (!date || !time)  { App.toast('Please fill in Date and Time.', 'error'); return; }
+    if (!date || !time) { App.toast('Please fill in Date and Time.', 'error'); return; }
     if (!count) { App.toast('Please select number of entries.', 'error'); return; }
 
     const mode = getCurrentMode();
@@ -539,30 +539,30 @@ const Stock = (() => {
 
     if (mode === 'same') {
       // Collect shared fields
-      const brand     = document.getElementById('se-shared-brand')?.value.trim()     || '';
-      const article   = document.getElementById('se-shared-article')?.value.trim()   || '';
-      const cat       = document.getElementById('se-shared-category')?.value          || '';
-      const type      = document.getElementById('se-shared-type')?.value              || '';
-      const shoeStyle = document.getElementById('se-shared-shoestyle')?.value         || '';
-      const color     = document.getElementById('se-shared-color')?.value.trim()      || '';
-      const cost      = Number(document.getElementById('se-shared-cost')?.value)      || 0;
-      const mrp       = Number(document.getElementById('se-shared-mrp')?.value)       || 0;
+      const brand = document.getElementById('se-shared-brand')?.value.trim() || '';
+      const article = document.getElementById('se-shared-article')?.value.trim() || '';
+      const cat = document.getElementById('se-shared-category')?.value || '';
+      const type = document.getElementById('se-shared-type')?.value || '';
+      const shoeStyle = document.getElementById('se-shared-shoestyle')?.value || '';
+      const color = document.getElementById('se-shared-color')?.value.trim() || '';
+      const cost = Number(document.getElementById('se-shared-cost')?.value) || 0;
+      const mrp = Number(document.getElementById('se-shared-mrp')?.value) || 0;
 
-      if (!brand)   { App.toast('Brand missing (shared).', 'error'); return; }
+      if (!brand) { App.toast('Brand missing (shared).', 'error'); return; }
       if (!article) { App.toast('Article missing (shared).', 'error'); return; }
-      if (!cat)     { App.toast('Category missing (shared).', 'error'); return; }
-      if (!type)    { App.toast('Type missing (shared).', 'error'); return; }
-      if (!color)   { App.toast('Color missing (shared).', 'error'); return; }
+      if (!cat) { App.toast('Category missing (shared).', 'error'); return; }
+      if (!type) { App.toast('Type missing (shared).', 'error'); return; }
+      if (!color) { App.toast('Color missing (shared).', 'error'); return; }
       if (type === 'Shoe' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
       if (!cost || !mrp) { App.toast('Wholesale Rate / MRP missing (shared).', 'error'); return; }
-      if (mrp < cost)    { App.toast('MRP cannot be less than Wholesale Rate.', 'error'); return; }
+      if (mrp < cost) { App.toast('MRP cannot be less than Wholesale Rate.', 'error'); return; }
 
       for (let i = 0; i < count; i++) {
         const size = document.getElementById(`se-size-var-${i}`)?.value.trim() || '';
-        const qty  = Number(document.getElementById(`se-qty-var-${i}`)?.value)  || 0;
-        const lbl  = ` (Entry ${i + 1})`;
-        if (!size)  { App.toast(`Size missing${lbl}.`, 'error'); return; }
-        if (qty < 0){ App.toast(`Qty invalid${lbl}.`, 'error'); return; }
+        const qty = Number(document.getElementById(`se-qty-var-${i}`)?.value) || 0;
+        const lbl = ` (Entry ${i + 1})`;
+        if (!size) { App.toast(`Size missing${lbl}.`, 'error'); return; }
+        if (qty < 0) { App.toast(`Qty invalid${lbl}.`, 'error'); return; }
 
         entryRows.push([date, time, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
       }
@@ -570,27 +570,27 @@ const Stock = (() => {
     } else {
       // Different mode — single or multiple independent entries
       for (let i = 0; i < count; i++) {
-        const brand     = document.getElementById(`se-brand-${i}`)?.value.trim()     || '';
-        const article   = document.getElementById(`se-article-${i}`)?.value.trim()   || '';
-        const size      = document.getElementById(`se-size-${i}`)?.value.trim()       || '';
-        const cat       = document.getElementById(`se-category-${i}`)?.value          || '';
-        const type      = document.getElementById(`se-type-${i}`)?.value              || '';
-        const shoeStyle = document.getElementById(`se-shoestyle-${i}`)?.value         || '';
-        const color     = document.getElementById(`se-color-${i}`)?.value.trim()      || '';
-        const qty       = Number(document.getElementById(`se-qty-${i}`)?.value)       || 0;
-        const cost      = Number(document.getElementById(`se-cost-${i}`)?.value)      || 0;
-        const mrp       = Number(document.getElementById(`se-mrp-${i}`)?.value)       || 0;
-        const lbl       = count > 1 ? ` (Entry ${i + 1})` : '';
+        const brand = document.getElementById(`se-brand-${i}`)?.value.trim() || '';
+        const article = document.getElementById(`se-article-${i}`)?.value.trim() || '';
+        const size = document.getElementById(`se-size-${i}`)?.value.trim() || '';
+        const cat = document.getElementById(`se-category-${i}`)?.value || '';
+        const type = document.getElementById(`se-type-${i}`)?.value || '';
+        const shoeStyle = document.getElementById(`se-shoestyle-${i}`)?.value || '';
+        const color = document.getElementById(`se-color-${i}`)?.value.trim() || '';
+        const qty = Number(document.getElementById(`se-qty-${i}`)?.value) || 0;
+        const cost = Number(document.getElementById(`se-cost-${i}`)?.value) || 0;
+        const mrp = Number(document.getElementById(`se-mrp-${i}`)?.value) || 0;
+        const lbl = count > 1 ? ` (Entry ${i + 1})` : '';
 
-        if (!brand)   { App.toast(`Brand missing${lbl}.`, 'error'); return; }
+        if (!brand) { App.toast(`Brand missing${lbl}.`, 'error'); return; }
         if (!article) { App.toast(`Article missing${lbl}.`, 'error'); return; }
-        if (!size)    { App.toast(`Size missing${lbl}.`, 'error'); return; }
-        if (!cat)     { App.toast(`Category missing${lbl}.`, 'error'); return; }
-        if (!type)    { App.toast(`Type missing${lbl}.`, 'error'); return; }
-        if (!color)   { App.toast(`Color missing${lbl}.`, 'error'); return; }
+        if (!size) { App.toast(`Size missing${lbl}.`, 'error'); return; }
+        if (!cat) { App.toast(`Category missing${lbl}.`, 'error'); return; }
+        if (!type) { App.toast(`Type missing${lbl}.`, 'error'); return; }
+        if (!color) { App.toast(`Color missing${lbl}.`, 'error'); return; }
         if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${lbl}.`, 'error'); return; }
         if (!cost || !mrp) { App.toast(`Prices missing${lbl}.`, 'error'); return; }
-        if (mrp < cost)    { App.toast(`MRP < Wholesale Rate${lbl}.`, 'error'); return; }
+        if (mrp < cost) { App.toast(`MRP < Wholesale Rate${lbl}.`, 'error'); return; }
 
         entryRows.push([date, time, brand, article, Number(size), cat, type, shoeStyle, color, qty, cost, mrp]);
       }
@@ -628,21 +628,21 @@ const Stock = (() => {
   // ── Table render ──────────────────────────────────────────
   function renderTable() {
     const search = (document.getElementById('sf-search')?.value || '').toLowerCase();
-    const cat    = document.getElementById('sf-category')?.value || '';
-    const type   = document.getElementById('sf-type')?.value || '';
-    const from   = document.getElementById('sf-from')?.value || '';
-    const to     = document.getElementById('sf-to')?.value   || '';
+    const cat = document.getElementById('sf-category')?.value || '';
+    const type = document.getElementById('sf-type')?.value || '';
+    const from = document.getElementById('sf-from')?.value || '';
+    const to = document.getElementById('sf-to')?.value || '';
 
     const filtered = allRows.filter(r => {
-      const dStr    = String(r[0] || '').slice(0, 10);
-      const brand   = String(r[2] || '').toLowerCase();
+      const dStr = String(r[0] || '').slice(0, 10);
+      const brand = String(r[2] || '').toLowerCase();
       const article = String(r[3] || '').toLowerCase();
-      const color   = String(r[8] || '').toLowerCase();
+      const color = String(r[8] || '').toLowerCase();
       const matchSearch = !search || brand.includes(search) || article.includes(search) || color.includes(search);
-      const matchCat    = !cat  || r[5] === cat;
-      const matchType   = !type || r[6] === type;
-      const matchFrom   = !from || dStr >= from;
-      const matchTo     = !to   || dStr <= to;
+      const matchCat = !cat || r[5] === cat;
+      const matchType = !type || r[6] === type;
+      const matchFrom = !from || dStr >= from;
+      const matchTo = !to || dStr <= to;
       return matchSearch && matchCat && matchType && matchFrom && matchTo;
     });
 
@@ -656,7 +656,7 @@ const Stock = (() => {
 
     tbody.innerHTML = filtered.map((r, fi) => {
       const origIdx = allRows.indexOf(r);
-      const qty  = Number(r[9]) || 0;
+      const qty = Number(r[9]) || 0;
       const cost = Number(r[10]) || 0;
       const totalCostVal = qty * cost;
       const qtyBadge = qty <= 2
@@ -695,7 +695,7 @@ const Stock = (() => {
     document.getElementById('sf-category').value = '';
     document.getElementById('sf-type').value = '';
     const sfFrom = document.getElementById('sf-from'); if (sfFrom) sfFrom.value = '';
-    const sfTo   = document.getElementById('sf-to');   if (sfTo)   sfTo.value   = '';
+    const sfTo = document.getElementById('sf-to'); if (sfTo) sfTo.value = '';
     renderTable();
   }
 
@@ -714,25 +714,25 @@ const Stock = (() => {
     container.innerHTML = entryHTML(0, 1);
     attachDiffListeners(0);
 
-    document.getElementById('s-date').value         = r[0] || '';
-    document.getElementById('s-time').value         = r[1] || '';
-    document.getElementById('se-brand-0').value     = r[2] || '';
-    document.getElementById('se-article-0').value   = r[3] || '';
-    document.getElementById('se-size-0').value      = r[4] || '';
-    document.getElementById('se-category-0').value  = r[5] || '';
-    document.getElementById('se-type-0').value      = r[6] || '';
+    document.getElementById('s-date').value = r[0] || '';
+    document.getElementById('s-time').value = r[1] || '';
+    document.getElementById('se-brand-0').value = r[2] || '';
+    document.getElementById('se-article-0').value = r[3] || '';
+    document.getElementById('se-size-0').value = r[4] || '';
+    document.getElementById('se-category-0').value = r[5] || '';
+    document.getElementById('se-type-0').value = r[6] || '';
     document.getElementById('se-shoestyle-0').value = r[7] || '';
-    document.getElementById('se-color-0').value     = r[8] || '';
-    document.getElementById('se-qty-0').value       = r[9] || '';
-    document.getElementById('se-cost-0').value      = r[10] || '';
-    document.getElementById('se-mrp-0').value       = r[11] || '';
+    document.getElementById('se-color-0').value = r[8] || '';
+    document.getElementById('se-qty-0').value = r[9] || '';
+    document.getElementById('se-cost-0').value = r[10] || '';
+    document.getElementById('se-mrp-0').value = r[11] || '';
 
     if (r[6] === 'Shoe') {
       document.getElementById('se-shoestyle-group-0').style.display = 'flex';
     }
 
-    document.getElementById('stock-form-title').textContent  = '✏️ Edit Stock Entry';
-    document.getElementById('stock-submit-btn').textContent  = 'Update Entry';
+    document.getElementById('stock-form-title').textContent = '✏️ Edit Stock Entry';
+    document.getElementById('stock-submit-btn').textContent = 'Update Entry';
   }
 
   async function del(origIdx) {
@@ -751,7 +751,8 @@ const Stock = (() => {
   function sell(origIdx) {
     const r = allRows[origIdx];
     const stockQty = Number(r[9]) || 0;
-    const mrp      = Number(r[11]) || 0;
+    const costPrice = Number(r[10]) || 0;
+    const mrpPrice  = Number(r[11]) || 0;
 
     // Remove any existing modal
     document.getElementById('sell-modal-overlay')?.remove();
@@ -762,7 +763,7 @@ const Stock = (() => {
     overlay.innerHTML = `
       <div class="modal-box" id="sell-modal-box">
         <div class="modal-header">
-          <div class="modal-title">💰 Sell This Item</div>
+          <div class="modal-title">💰 Quick Sell</div>
           <button class="modal-close" id="sell-modal-close">✕</button>
         </div>
         <div class="modal-body">
@@ -775,12 +776,12 @@ const Stock = (() => {
             <div class="modal-stock-info-row"><span>Category</span><strong>${r[5] || '—'}</strong></div>
             <div class="modal-stock-info-row"><span>Type</span><strong>${r[6] || '—'}</strong></div>
             <div class="modal-stock-info-row"><span>Stock Available</span><strong style="color:var(--green)">${stockQty} pairs</strong></div>
-            <div class="modal-stock-info-row"><span>Wholesale Rate</span><strong>₹${(Number(r[10])||0).toLocaleString('en-IN')}</strong></div>
-            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${(Number(r[11])||0).toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>Wholesale Rate</span><strong>₹${costPrice.toLocaleString('en-IN')}</strong></div>
+            <div class="modal-stock-info-row"><span>MRP / pair</span><strong>₹${mrpPrice.toLocaleString('en-IN')}</strong></div>
           </div>
 
           <!-- Sale details -->
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0">
             <div class="form-group">
               <label for="sell-modal-date">Sale Date *</label>
               <input type="date" id="sell-modal-date" />
@@ -794,8 +795,8 @@ const Stock = (() => {
               <input type="number" id="sell-modal-qty" min="1" max="${stockQty}" value="1" />
             </div>
             <div class="form-group">
-              <label for="sell-modal-price">Selling Price / pair (₹) *</label>
-              <input type="number" id="sell-modal-price" placeholder="0" min="0" step="1" />
+              <label for="sell-modal-price">💸 Selling Price / pair (₹) *</label>
+              <input type="number" id="sell-modal-price" placeholder="Enter selling price" min="0" step="1" style="border-color:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.12)" />
             </div>
           </div>
 
@@ -834,19 +835,21 @@ const Stock = (() => {
       timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false
     });
 
+    // Autofocus selling price so user can immediately type
+    setTimeout(() => document.getElementById('sell-modal-price')?.focus(), 80);
+
     // Live calculation
+    const fmtInr = n => '₹' + Number(n).toLocaleString('en-IN');
     const calcSell = () => {
-      const qty   = Number(document.getElementById('sell-modal-qty')?.value)   || 0;
-      const price = Number(document.getElementById('sell-modal-price')?.value) || 0;
-      const cost  = Number(r[10]) || 0;
-      const inr   = n => '₹' + Number(n).toLocaleString('en-IN');
-      const profitPair  = price - cost;
+      const qty    = Number(document.getElementById('sell-modal-qty')?.value)   || 0;
+      const price  = Number(document.getElementById('sell-modal-price')?.value) || 0;
+      const profitPair = price - costPrice;
       const totalSale   = qty * price;
       const totalProfit = qty * profitPair;
-      const discount    = mrp - price;
+      const discount    = mrpPrice - price;
       const setC = (id, val) => {
         const el = document.getElementById(id);
-        if (el) { el.textContent = inr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
+        if (el) { el.textContent = fmtInr(val); el.style.color = val < 0 ? 'var(--red)' : 'var(--accent)'; }
       };
       setC('sell-modal-total-sale',   totalSale);
       setC('sell-modal-profit-pair',  profitPair);
@@ -862,21 +865,24 @@ const Stock = (() => {
     document.getElementById('sell-modal-cancel').addEventListener('click', closeModal);
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
+    // Allow Enter key on price field to confirm
+    document.getElementById('sell-modal-price').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('sell-modal-confirm').click();
+    });
+
     // Confirm sale
     document.getElementById('sell-modal-confirm').addEventListener('click', async () => {
-      const saleDate  = document.getElementById('sell-modal-date').value.trim();
-      const saleTime  = document.getElementById('sell-modal-time').value.trim();
-      const qtyToSell = Number(document.getElementById('sell-modal-qty').value) || 0;
-      const sellPrice = Number(document.getElementById('sell-modal-price').value) || 0;
-      const costPrice = Number(r[10]) || 0;
-      const mrpPrice  = Number(r[11]) || 0;
+      const saleDate   = document.getElementById('sell-modal-date').value.trim();
+      const saleTime   = document.getElementById('sell-modal-time').value.trim();
+      const qtyToSell  = Number(document.getElementById('sell-modal-qty').value)   || 0;
+      const sellPrice  = Number(document.getElementById('sell-modal-price').value) || 0;
 
-      if (!saleDate) { App.toast('Please enter sale date.', 'error'); return; }
-      if (!saleTime) { App.toast('Please enter sale time.', 'error'); return; }
-      if (qtyToSell < 1)         { App.toast('Qty to sell must be at least 1.', 'error'); return; }
-      if (qtyToSell > stockQty)  { App.toast(`Only ${stockQty} pairs in stock.`, 'error'); return; }
-      if (!sellPrice)            { App.toast('Please enter selling price.', 'error'); return; }
-      if (sellPrice > mrpPrice)  { App.toast('Selling price cannot exceed MRP.', 'error'); return; }
+      // ── Validation ──
+      if (!saleDate)             { App.toast('Please enter sale date.',                    'error'); return; }
+      if (!saleTime)             { App.toast('Please enter sale time.',                    'error'); return; }
+      if (qtyToSell < 1)        { App.toast('Qty to sell must be at least 1.',            'error'); return; }
+      if (qtyToSell > stockQty) { App.toast(`Only ${stockQty} pairs available in stock.`, 'error'); return; }
+      if (sellPrice <= 0)       { App.toast('Please enter a valid selling price.',         'error'); return; }
 
       const totalSale   = qtyToSell * sellPrice;
       const totalCost   = qtyToSell * costPrice;
@@ -884,7 +890,7 @@ const Stock = (() => {
       const totalProfit = qtyToSell * profitPair;
       const discount    = mrpPrice - sellPrice;
 
-      // Sale row: [Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount]
+      // Sale row columns: Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount
       const saleRow = [
         saleDate, saleTime,
         r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8],
@@ -893,18 +899,20 @@ const Stock = (() => {
       ];
 
       const confirmBtn = document.getElementById('sell-modal-confirm');
-      confirmBtn.disabled = true; confirmBtn.textContent = 'Saving…';
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Saving…';
 
       try {
         // 1. Add sale record to Google Sheets
         await API.addSale(saleRow);
 
-        // 2. Update shared App salesRows store
+        // 2. Update shared App salesRows store (so Sales page shows it immediately)
         App.addSaleRow(saleRow);
 
-        // 3. Update or delete stock in Google Sheets + shared store
+        // 3. Update or delete stock in Google Sheets + shared App store
         const newQty = stockQty - qtyToSell;
         if (newQty <= 0) {
+          // All stock sold — delete the row completely
           await API.deleteStock(origIdx);
           allRows.splice(origIdx, 1);
           App.removeStockRow(origIdx);
@@ -918,18 +926,22 @@ const Stock = (() => {
 
         closeModal();
 
-        // 4. Show toast then navigate to Sales Management
+        // 4. Refresh stock table so user sees updated/removed row
+        renderTable();
+
+        // 5. Toast with full details then navigate to Sales
         App.toast(
-          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[2]} ${r[3]} (Size ${r[4]}) — added to Sales!`,
+          `✅ Sold ${qtyToSell} pair${qtyToSell > 1 ? 's' : ''} of ${r[2]} ${r[3]} (Size ${r[4]}) for ₹${sellPrice.toLocaleString('en-IN')}/pair — added to Sales!`,
           'success'
         );
 
         // Small delay so user sees the toast before navigating
-        setTimeout(() => App.navigate('sales'), 800);
+        setTimeout(() => App.navigate('sales'), 1200);
 
       } catch (err) {
-        App.toast('Error: ' + err.message, 'error');
-        confirmBtn.disabled = false; confirmBtn.textContent = '✅ Confirm Sale';
+        App.toast('Error saving sale: ' + err.message, 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '✅ Confirm Sale';
       }
     });
   }

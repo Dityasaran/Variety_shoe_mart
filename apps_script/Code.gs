@@ -21,7 +21,7 @@ const SALES_HEADERS = [
 
 // ── Format any cell value returned by getValues() into a clean type ─
 // Google Sheets returns date/time cells as JS Date objects, and can
-// return numbers with floating-point noise (e.g. 1098.9700001 for 1099).
+// return numbers with floating-point noise.
 function formatCell(cell) {
   // Handle Date objects
   if (cell instanceof Date && !isNaN(cell.getTime())) {
@@ -38,7 +38,7 @@ function formatCell(cell) {
     const d  = String(cell.getDate()).padStart(2, '0');
     return y + '-' + mo + '-' + d;
   }
-  // Round numbers to 2 decimal places to eliminate floating-point noise
+  // Round numbers to eliminate decimals entirely (e.g., 399.00 -> 399)
   if (typeof cell === 'number' && isFinite(cell)) {
     return Math.round(cell);
   }
