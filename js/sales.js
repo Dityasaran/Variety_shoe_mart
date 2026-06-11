@@ -14,7 +14,7 @@ const Sales = (() => {
 
   const CATS        = ['Men', 'Women', 'Kids'];
   const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Laceless'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle'];
   const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   // ── IST helpers ──────────────────────────────────────────
