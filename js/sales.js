@@ -1026,6 +1026,7 @@ const Sales = (() => {
     }
   }
 
+
   // ── Quick Entry Modal ─────────────────────────────────────
   // Allows directly entering total sale amount + profit for one or more
   // dates without needing to enter brand/model/size details.
@@ -1036,24 +1037,19 @@ const Sales = (() => {
     overlay.className = 'modal-overlay';
     overlay.id = 'quick-entry-modal-overlay';
     overlay.innerHTML = `
-      <div class="modal-box" id="quick-entry-modal-box" style="max-width:480px">
+      <div class="modal-box" id="quick-entry-modal-box" style="max-width:520px">
         <div class="modal-header">
           <div class="modal-title">⚡ Quick Sales Entry</div>
           <button class="modal-close" id="qe-close">✕</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="max-height:70vh;overflow-y:auto">
           <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px;line-height:1.5">
-            Directly enter the total <strong>Sale Amount</strong> and <strong>Profit</strong> for a date — no shoe details needed.
+            Directly enter the total <strong>Sale Amount</strong> and <strong>Profit</strong> for each date — no shoe details needed.
           </p>
-
-          <div id="qe-rows-container">
-            <!-- rows injected here -->
-          </div>
-
-          <button type="button" class="btn btn-secondary btn-sm" id="qe-add-row" style="margin-top:12px;width:100%">
+          <div id="qe-rows-container"></div>
+          <button type="button" class="btn btn-secondary btn-sm" id="qe-add-row" style="margin-top:4px;width:100%">
             + Add Another Date
           </button>
-
           <div class="form-actions" style="margin-top:20px">
             <button type="button" class="btn btn-primary" id="qe-save">💾 Save Entries</button>
             <button type="button" class="btn btn-secondary" id="qe-cancel">Cancel</button>
@@ -1063,68 +1059,79 @@ const Sales = (() => {
     `;
     document.body.appendChild(overlay);
 
-    // Start with 3 date rows (Jun 1, Jun 2, Jun 3 as hints)
-    const startDates = ['2026-06-01', '2026-06-02', '2026-06-03'];
     const container = document.getElementById('qe-rows-container');
-    startDates.forEach((d, i) => addQuickEntryRow(container, i, d));
-    let rowCount = startDates.length;
+    let nextId = 0;
 
-    // Add row button
-    document.getElementById('qe-add-row').addEventListener('click', () => {
-      addQuickEntryRow(container, rowCount, getISTDateStr());
-      rowCount++;
+    // ── Event delegation: handles delete for ALL rows (initial + added) ──
+    container.addEventListener('click', function (e) {
+      const btn = e.target.closest('.qe-delete-btn');
+      if (btn) {
+        const rowId = btn.getAttribute('data-row-id');
+        document.getElementById(rowId)?.remove();
+      }
     });
 
-    // Close handlers
+    function addRow(defaultDate) {
+      const rowId = `qe-row-${nextId++}`;
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.className = 'qe-entry-row';
+      div.style.cssText = 'display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)';
+      div.innerHTML = `
+        <div class="form-group" style="margin:0;flex:1;min-width:110px">
+          <label style="font-size:.75rem;margin-bottom:4px;display:block">Date *</label>
+          <input type="date" class="qe-date" value="${defaultDate}" style="width:100%" />
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:110px">
+          <label style="font-size:.75rem;margin-bottom:4px;display:block">Total Sale (₹) *</label>
+          <input type="number" class="qe-sale" placeholder="0" min="0" step="1" style="width:100%" />
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:110px">
+          <label style="font-size:.75rem;margin-bottom:4px;display:block">Total Profit (₹) *</label>
+          <input type="number" class="qe-profit" placeholder="0" step="1" style="width:100%" />
+        </div>
+        <button type="button"
+          class="qe-delete-btn"
+          data-row-id="${rowId}"
+          style="flex-shrink:0;background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.9rem;font-weight:700;line-height:1;align-self:flex-end;margin-bottom:1px"
+          title="Remove this row">✕</button>
+      `;
+      container.appendChild(div);
+    }
+
+    // Pre-fill Jun 1, 2, 3
+    ['2026-06-01', '2026-06-02', '2026-06-03'].forEach(d => addRow(d));
+
+    document.getElementById('qe-add-row').addEventListener('click', () => addRow(getISTDateStr()));
+
     const closeModal = () => overlay.remove();
     document.getElementById('qe-close').addEventListener('click', closeModal);
     document.getElementById('qe-cancel').addEventListener('click', closeModal);
     overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
-    // Save handler
-    document.getElementById('qe-save').addEventListener('click', () => saveQuickEntries(rowCount, closeModal));
+    document.getElementById('qe-save').addEventListener('click', () => saveQuickEntries(container, closeModal));
   }
 
-  function addQuickEntryRow(container, i, defaultDate) {
-    const div = document.createElement('div');
-    div.id = `qe-row-${i}`;
-    div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)';
-    div.innerHTML = `
-      <div class="form-group" style="margin:0">
-        <label for="qe-date-${i}" style="font-size:.75rem">Date *</label>
-        <input type="date" id="qe-date-${i}" value="${defaultDate}" />
-      </div>
-      <div class="form-group" style="margin:0">
-        <label for="qe-sale-${i}" style="font-size:.75rem">Total Sale (₹) *</label>
-        <input type="number" id="qe-sale-${i}" placeholder="0" min="0" step="1" />
-      </div>
-      <div class="form-group" style="margin:0">
-        <label for="qe-profit-${i}" style="font-size:.75rem">Total Profit (₹) *</label>
-        <input type="number" id="qe-profit-${i}" placeholder="0" step="1" />
-      </div>
-      <button type="button" class="action-delete" style="margin-bottom:2px;padding:6px 10px;white-space:nowrap" onclick="document.getElementById('qe-row-${i}').remove()">✕</button>
-    `;
-    container.appendChild(div);
-  }
-
-  async function saveQuickEntries(rowCount, closeModal) {
+  async function saveQuickEntries(container, closeModal) {
     const saveBtn = document.getElementById('qe-save');
     const entries = [];
 
-    // Collect all visible rows
-    for (let i = 0; i < rowCount; i++) {
-      const rowEl = document.getElementById(`qe-row-${i}`);
-      if (!rowEl) continue; // row was deleted
+    // Query ALL currently-visible entry rows (handles deleted rows correctly)
+    const rows = container.querySelectorAll('.qe-entry-row');
+    if (rows.length === 0) { App.toast('No entries to save.', 'error'); return; }
 
-      const date   = document.getElementById(`qe-date-${i}`)?.value?.trim()   || '';
-      const sale   = Number(document.getElementById(`qe-sale-${i}`)?.value)   || 0;
-      const profit = Number(document.getElementById(`qe-profit-${i}`)?.value) || 0;
+    let rowNum = 0;
+    for (const rowEl of rows) {
+      rowNum++;
+      const date   = rowEl.querySelector('.qe-date')?.value?.trim()    || '';
+      const sale   = Number(rowEl.querySelector('.qe-sale')?.value)    || 0;
+      const profit = Number(rowEl.querySelector('.qe-profit')?.value)  || 0;
 
-      if (!date)         { App.toast(`Date missing on row ${i + 1}.`, 'error'); return; }
-      if (sale <= 0)     { App.toast(`Sale amount must be > 0 on row ${i + 1}.`, 'error'); return; }
+      if (!date)     { App.toast(`Date missing on row ${rowNum}.`, 'error'); return; }
+      if (sale <= 0) { App.toast(`Sale amount must be > 0 on row ${rowNum}.`, 'error'); return; }
 
       const time = getISTTimeStr();
-      // Build a full sales row with blanks for columns we don't have:
+      // Build a full sales row — blanks for shoe-detail columns
       // 0=Date  1=Time  2=Brand  3=Article  4=Size  5=Category
       // 6=Type  7=ShoeStyle  8=Color  9=PairsInTransaction
       // 10=QtySold  11=WholesaleRate  12=MRP  13=SellingPrice
@@ -1132,14 +1139,12 @@ const Sales = (() => {
       const totalCost = sale - profit;
       entries.push([
         date, time,
-        'Quick Entry', '—', '', '',     // Brand=Quick Entry, Article=—, Size='', Cat=''
-        '', '', '', 1,                   // Type='', Style='', Color='', PairsInTxn=1
-        1, 0, 0, sale,                   // QtySold=1, Wholesale=0, MRP=0, SellPrice=sale
-        sale, totalCost, profit, profit, 0  // TotalSale, TotalCost, ProfitPerPair, TotalProfit, Discount=0
+        'Quick Entry', '—', '', '',
+        '', '', '', 1,
+        1, 0, 0, sale,
+        sale, totalCost, profit, profit, 0
       ]);
     }
-
-    if (entries.length === 0) { App.toast('No entries to save.', 'error'); return; }
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
