@@ -14,7 +14,7 @@ const Sales = (() => {
 
   const CATS        = ['Men', 'Women', 'Kids'];
   const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless'];
   const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   // ── IST helpers ──────────────────────────────────────────
@@ -69,7 +69,10 @@ const Sales = (() => {
     container.innerHTML = `
       <div class="page-header">
         <div class="page-title">🛒 Sales <span>Management</span></div>
-        <button class="btn btn-primary" id="toggle-sale-btn">+ Record Sale</button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn btn-secondary" id="quick-entry-btn">⚡ Quick Entry</button>
+          <button class="btn btn-primary" id="toggle-sale-btn">+ Record Sale</button>
+        </div>
       </div>
 
       <!-- Record Sale Form -->
@@ -214,6 +217,7 @@ const Sales = (() => {
     document.getElementById('toggle-sale-btn').addEventListener('click', () => { editIndex = null; showForm(true); });
     document.getElementById('sale-cancel-btn').addEventListener('click', () => showForm(false));
     document.getElementById('sale-form').addEventListener('submit', handleSubmit);
+    document.getElementById('quick-entry-btn').addEventListener('click', showQuickEntryModal);
 
     document.getElementById('ff-search').addEventListener('input', renderTable);
     document.getElementById('ff-category').addEventListener('change', renderTable);
@@ -1019,6 +1023,143 @@ const Sales = (() => {
       App.toast('Sale record deleted.', 'info');
     } catch (err) {
       App.toast('Error: ' + err.message, 'error');
+    }
+  }
+
+  // ── Quick Entry Modal ─────────────────────────────────────
+  // Allows directly entering total sale amount + profit for one or more
+  // dates without needing to enter brand/model/size details.
+  function showQuickEntryModal() {
+    document.getElementById('quick-entry-modal-overlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'quick-entry-modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box" id="quick-entry-modal-box" style="max-width:480px">
+        <div class="modal-header">
+          <div class="modal-title">⚡ Quick Sales Entry</div>
+          <button class="modal-close" id="qe-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px;line-height:1.5">
+            Directly enter the total <strong>Sale Amount</strong> and <strong>Profit</strong> for a date — no shoe details needed.
+          </p>
+
+          <div id="qe-rows-container">
+            <!-- rows injected here -->
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="qe-add-row" style="margin-top:12px;width:100%">
+            + Add Another Date
+          </button>
+
+          <div class="form-actions" style="margin-top:20px">
+            <button type="button" class="btn btn-primary" id="qe-save">💾 Save Entries</button>
+            <button type="button" class="btn btn-secondary" id="qe-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Start with 3 date rows (Jun 1, Jun 2, Jun 3 as hints)
+    const startDates = ['2026-06-01', '2026-06-02', '2026-06-03'];
+    const container = document.getElementById('qe-rows-container');
+    startDates.forEach((d, i) => addQuickEntryRow(container, i, d));
+    let rowCount = startDates.length;
+
+    // Add row button
+    document.getElementById('qe-add-row').addEventListener('click', () => {
+      addQuickEntryRow(container, rowCount, getISTDateStr());
+      rowCount++;
+    });
+
+    // Close handlers
+    const closeModal = () => overlay.remove();
+    document.getElementById('qe-close').addEventListener('click', closeModal);
+    document.getElementById('qe-cancel').addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    // Save handler
+    document.getElementById('qe-save').addEventListener('click', () => saveQuickEntries(rowCount, closeModal));
+  }
+
+  function addQuickEntryRow(container, i, defaultDate) {
+    const div = document.createElement('div');
+    div.id = `qe-row-${i}`;
+    div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)';
+    div.innerHTML = `
+      <div class="form-group" style="margin:0">
+        <label for="qe-date-${i}" style="font-size:.75rem">Date *</label>
+        <input type="date" id="qe-date-${i}" value="${defaultDate}" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label for="qe-sale-${i}" style="font-size:.75rem">Total Sale (₹) *</label>
+        <input type="number" id="qe-sale-${i}" placeholder="0" min="0" step="1" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label for="qe-profit-${i}" style="font-size:.75rem">Total Profit (₹) *</label>
+        <input type="number" id="qe-profit-${i}" placeholder="0" step="1" />
+      </div>
+      <button type="button" class="action-delete" style="margin-bottom:2px;padding:6px 10px;white-space:nowrap" onclick="document.getElementById('qe-row-${i}').remove()">✕</button>
+    `;
+    container.appendChild(div);
+  }
+
+  async function saveQuickEntries(rowCount, closeModal) {
+    const saveBtn = document.getElementById('qe-save');
+    const entries = [];
+
+    // Collect all visible rows
+    for (let i = 0; i < rowCount; i++) {
+      const rowEl = document.getElementById(`qe-row-${i}`);
+      if (!rowEl) continue; // row was deleted
+
+      const date   = document.getElementById(`qe-date-${i}`)?.value?.trim()   || '';
+      const sale   = Number(document.getElementById(`qe-sale-${i}`)?.value)   || 0;
+      const profit = Number(document.getElementById(`qe-profit-${i}`)?.value) || 0;
+
+      if (!date)         { App.toast(`Date missing on row ${i + 1}.`, 'error'); return; }
+      if (sale <= 0)     { App.toast(`Sale amount must be > 0 on row ${i + 1}.`, 'error'); return; }
+
+      const time = getISTTimeStr();
+      // Build a full sales row with blanks for columns we don't have:
+      // 0=Date  1=Time  2=Brand  3=Article  4=Size  5=Category
+      // 6=Type  7=ShoeStyle  8=Color  9=PairsInTransaction
+      // 10=QtySold  11=WholesaleRate  12=MRP  13=SellingPrice
+      // 14=TotalSale  15=TotalCost  16=ProfitPerPair  17=TotalProfit  18=Discount
+      const totalCost = sale - profit;
+      entries.push([
+        date, time,
+        'Quick Entry', '—', '', '',     // Brand=Quick Entry, Article=—, Size='', Cat=''
+        '', '', '', 1,                   // Type='', Style='', Color='', PairsInTxn=1
+        1, 0, 0, sale,                   // QtySold=1, Wholesale=0, MRP=0, SellPrice=sale
+        sale, totalCost, profit, profit, 0  // TotalSale, TotalCost, ProfitPerPair, TotalProfit, Discount=0
+      ]);
+    }
+
+    if (entries.length === 0) { App.toast('No entries to save.', 'error'); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      for (const row of entries) {
+        await API.addSale(row);
+        allRows.push(row);
+      }
+      App.toast(
+        entries.length > 1
+          ? `${entries.length} quick entries saved successfully!`
+          : 'Quick entry saved!',
+        'success'
+      );
+      closeModal();
+      renderTable();
+    } catch (err) {
+      App.toast('Error: ' + err.message, 'error');
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save Entries'; }
     }
   }
 

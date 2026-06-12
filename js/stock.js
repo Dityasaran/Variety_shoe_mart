@@ -12,7 +12,7 @@ const Stock = (() => {
 
   const CATS = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
   const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless'];
 
   // ── IST date helper ───────────────────────────────────────
   function getISTDateStr() {
