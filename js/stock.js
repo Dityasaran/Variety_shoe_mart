@@ -11,8 +11,8 @@ const Stock = (() => {
   let editIndex = null;
 
   const CATS = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
-  const TYPES = ['Sandal', 'Shoe', 'Safety Shoe', 'Water Shoe', 'Laceless', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless'];
+  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
 
   // ── IST date helper ───────────────────────────────────────
   function getISTDateStr() {

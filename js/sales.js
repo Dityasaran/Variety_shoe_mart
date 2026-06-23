@@ -13,8 +13,8 @@ const Sales = (() => {
   let editIndex = null;
 
   const CATS        = ['Men', 'Women', 'Kids'];
-  const TYPES       = ['Sandal', 'Shoe', 'Safety Shoe', 'Water Shoe', 'Laceless', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless'];
+  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
   const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   // ── IST helpers ──────────────────────────────────────────

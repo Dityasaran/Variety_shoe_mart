@@ -6,7 +6,7 @@
 const Requirements = (() => {
 
   const STORAGE_KEY = 'vsm_requirements_v1';
-  const TYPES = ['Sandal', 'Shoe', 'Safety Shoe', 'Water Shoe', 'Laceless', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
+  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const CATS  = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
   const PRIO  = ['🔴 Urgent', '🟡 Normal', '🟢 Low'];
 
