@@ -11,7 +11,7 @@ const Stock = (() => {
   let editIndex = null;
 
   const CATS = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
-  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
+  const TYPES = ['Sandal', 'Shoe', 'Safety Shoe', 'Water Shoe', 'Laceless', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
   const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless'];
 
   // ── IST date helper ───────────────────────────────────────
@@ -123,6 +123,38 @@ const Stock = (() => {
           ${TYPES.map(t => `<option>${t}</option>`).join('')}
         </select>
         <button class="btn btn-secondary btn-sm" id="sf-clear">✕ Clear</button>
+      </div>
+
+      <!-- Stock Cost Summary Banner -->
+      <div class="stock-cost-banner" id="stock-cost-banner">
+        <div class="stock-cost-card">
+          <div class="stock-cost-icon">📦</div>
+          <div class="stock-cost-info">
+            <div class="stock-cost-label">Total Stock Items</div>
+            <div class="stock-cost-value" id="scb-total-items">0</div>
+          </div>
+        </div>
+        <div class="stock-cost-card accent">
+          <div class="stock-cost-icon">💰</div>
+          <div class="stock-cost-info">
+            <div class="stock-cost-label">Total Wholesale Cost</div>
+            <div class="stock-cost-value" id="scb-total-wholesale">₹0</div>
+          </div>
+        </div>
+        <div class="stock-cost-card green">
+          <div class="stock-cost-icon">🏷️</div>
+          <div class="stock-cost-info">
+            <div class="stock-cost-label">Total MRP Value</div>
+            <div class="stock-cost-value" id="scb-total-mrp">₹0</div>
+          </div>
+        </div>
+        <div class="stock-cost-card gold">
+          <div class="stock-cost-icon">📈</div>
+          <div class="stock-cost-info">
+            <div class="stock-cost-label">Potential Profit</div>
+            <div class="stock-cost-value" id="scb-total-potential">₹0</div>
+          </div>
+        </div>
       </div>
 
       <!-- Table -->
@@ -391,6 +423,10 @@ const Stock = (() => {
                 <label for="se-qty-var-${i}">Qty (pairs) *</label>
                 <input type="number" id="se-qty-var-${i}" placeholder="0" min="0" required />
               </div>
+              <div class="variant-calc" id="se-calc-var-${i}">
+                <span class="variant-calc-label">Cost:</span>
+                <span class="variant-calc-val" id="se-calc-cost-var-${i}">₹0</span>
+              </div>
             </div>
           `).join('')}
         </div>
@@ -404,6 +440,9 @@ const Stock = (() => {
       sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
       if (this.value !== 'Shoe') document.getElementById('se-shared-shoestyle').value = '';
     });
+
+    // Update live cost calculation on shared cost change
+    document.getElementById('se-shared-cost')?.addEventListener('input', () => updateSameModeCostCalc(n));
 
     // ── Auto-propagate Entry 1's size to all other entries ──
     const sizeEl0 = document.getElementById('se-size-var-0');
@@ -424,6 +463,21 @@ const Stock = (() => {
     for (let i = 1; i < n; i++) {
       const sEl = document.getElementById(`se-size-var-${i}`);
       if (sEl) sEl.addEventListener('input', function () { this.dataset.synced = 'false'; });
+    }
+
+    // Attach qty listeners for live cost calc per variant
+    for (let i = 0; i < n; i++) {
+      document.getElementById(`se-qty-var-${i}`)?.addEventListener('input', () => updateSameModeCostCalc(n));
+    }
+  }
+
+  // ── Live cost calc for same-mode variants ─────────────────
+  function updateSameModeCostCalc(n) {
+    const cost = Number(document.getElementById('se-shared-cost')?.value) || 0;
+    for (let i = 0; i < n; i++) {
+      const qty = Number(document.getElementById(`se-qty-var-${i}`)?.value) || 0;
+      const el  = document.getElementById(`se-calc-cost-var-${i}`);
+      if (el) el.textContent = '₹' + (qty * cost).toLocaleString('en-IN');
     }
   }
 
@@ -486,6 +540,12 @@ const Stock = (() => {
             <input type="number" id="se-mrp-${i}" placeholder="0" min="0" step="1" required />
           </div>
         </div>
+        <!-- Live cost preview -->
+        <div class="entry-cost-preview" id="se-cost-preview-${i}">
+          <div class="ecp-item"><span>Total Wholesale Cost</span><strong id="se-ecp-wholesale-${i}">₹0</strong></div>
+          <div class="ecp-item"><span>Total MRP Value</span><strong id="se-ecp-mrp-${i}">₹0</strong></div>
+          <div class="ecp-item accent"><span>Potential Profit</span><strong id="se-ecp-profit-${i}">₹0</strong></div>
+        </div>
       </div>
     `;
   }
@@ -496,6 +556,21 @@ const Stock = (() => {
       sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
       if (this.value !== 'Shoe') document.getElementById(`se-shoestyle-${i}`).value = '';
     });
+    // Live cost preview
+    [`se-qty-${i}`, `se-cost-${i}`, `se-mrp-${i}`].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => updateDiffEntryCost(i));
+    });
+  }
+
+  function updateDiffEntryCost(i) {
+    const qty  = Number(document.getElementById(`se-qty-${i}`)?.value)  || 0;
+    const cost = Number(document.getElementById(`se-cost-${i}`)?.value) || 0;
+    const mrp  = Number(document.getElementById(`se-mrp-${i}`)?.value)  || 0;
+    const fmt = n => '₹' + n.toLocaleString('en-IN');
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
+    setEl(`se-ecp-wholesale-${i}`, qty * cost);
+    setEl(`se-ecp-mrp-${i}`,       qty * mrp);
+    setEl(`se-ecp-profit-${i}`,    qty * (mrp - cost));
   }
 
   // ── Detect current form mode ──────────────────────────────
@@ -625,6 +700,26 @@ const Stock = (() => {
     }
   }
 
+  // ── Stock cost banner update ──────────────────────────────
+  function updateCostBanner(rows) {
+    let totalItems = 0, totalWholesale = 0, totalMRP = 0;
+    rows.forEach(r => {
+      const qty  = Number(r[9])  || 0;
+      const cost = Number(r[10]) || 0;
+      const mrp  = Number(r[11]) || 0;
+      totalItems     += qty;
+      totalWholesale += qty * cost;
+      totalMRP       += qty * mrp;
+    });
+    const potential = totalMRP - totalWholesale;
+    const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('scb-total-items',     totalItems.toLocaleString('en-IN') + ' pairs');
+    setEl('scb-total-wholesale', fmt(totalWholesale));
+    setEl('scb-total-mrp',       fmt(totalMRP));
+    setEl('scb-total-potential', fmt(potential));
+  }
+
   // ── Table render ──────────────────────────────────────────
   function renderTable() {
     const search = (document.getElementById('sf-search')?.value || '').toLowerCase();
@@ -645,6 +740,9 @@ const Stock = (() => {
       const matchTo = !to || dStr <= to;
       return matchSearch && matchCat && matchType && matchFrom && matchTo;
     });
+
+    // Always update banner with full allRows (not just filtered)
+    updateCostBanner(allRows);
 
     document.getElementById('stock-count').textContent = `${filtered.length} item${filtered.length !== 1 ? 's' : ''}`;
     const tbody = document.getElementById('stock-tbody');
