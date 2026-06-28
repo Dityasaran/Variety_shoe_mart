@@ -11,8 +11,8 @@ const Stock = (() => {
   let editIndex = null;
 
   const CATS = ['Men', 'Women', 'Boys', 'Girls', 'Kids'];
-  const TYPES = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
+  const TYPES = ['Sandal', 'Shoes', 'Slipper', 'Crocs', 'Flip Flops', 'Socks'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Loafer', 'Sports', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
 
   // ── IST date helper ───────────────────────────────────────
   function getISTDateStr() {
@@ -51,7 +51,10 @@ const Stock = (() => {
     container.innerHTML = `
       <div class="page-header">
         <div class="page-title">📦 Stock <span>Management</span></div>
-        <button class="btn btn-primary" id="toggle-form-btn">+ Add New Entry</button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn btn-secondary" id="stock-quick-entry-btn">⚡ Quick Entry</button>
+          <button class="btn btn-primary" id="toggle-form-btn">+ Add New Entry</button>
+        </div>
       </div>
 
       <!-- Add / Edit Form -->
@@ -208,6 +211,7 @@ const Stock = (() => {
     document.getElementById('sf-from').addEventListener('change', renderTable);
     document.getElementById('sf-to').addEventListener('change', renderTable);
     document.getElementById('sf-clear').addEventListener('click', clearFilters);
+    document.getElementById('stock-quick-entry-btn').addEventListener('click', showBulkQuickEntryModal);
 
     renderTable();
   }
@@ -323,7 +327,7 @@ const Stock = (() => {
     set('se-shared-color', d.color);
     set('se-shared-cost', d.cost);
     set('se-shared-mrp', d.mrp);
-    if (d.type === 'Shoe') {
+    if (d.type === 'Shoes') {
       const sg = document.getElementById('se-shared-shoestyle-group');
       if (sg) sg.style.display = 'flex';
     }
@@ -347,7 +351,7 @@ const Stock = (() => {
     set(`se-qty-${i}`, d.qty);
     set(`se-cost-${i}`, d.cost);
     set(`se-mrp-${i}`, d.mrp);
-    if (d.type === 'Shoe') {
+    if (d.type === 'Shoes') {
       const sg = document.getElementById(`se-shoestyle-group-${i}`);
       if (sg) sg.style.display = 'flex';
     }
@@ -437,8 +441,8 @@ const Stock = (() => {
   function attachSameModeListeners(n) {
     document.getElementById('se-shared-type')?.addEventListener('change', function () {
       const sg = document.getElementById('se-shared-shoestyle-group');
-      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-      if (this.value !== 'Shoe') document.getElementById('se-shared-shoestyle').value = '';
+      sg.style.display = this.value === 'Shoes' ? 'flex' : 'none';
+      if (this.value !== 'Shoes') document.getElementById('se-shared-shoestyle').value = '';
     });
 
     // Update live cost calculation on shared cost change
@@ -553,8 +557,8 @@ const Stock = (() => {
   function attachDiffListeners(i) {
     document.getElementById(`se-type-${i}`)?.addEventListener('change', function () {
       const sg = document.getElementById(`se-shoestyle-group-${i}`);
-      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-      if (this.value !== 'Shoe') document.getElementById(`se-shoestyle-${i}`).value = '';
+      sg.style.display = this.value === 'Shoes' ? 'flex' : 'none';
+      if (this.value !== 'Shoes') document.getElementById(`se-shoestyle-${i}`).value = '';
     });
     // Live cost preview
     [`se-qty-${i}`, `se-cost-${i}`, `se-mrp-${i}`].forEach(id => {
@@ -628,7 +632,7 @@ const Stock = (() => {
       if (!cat) { App.toast('Category missing (shared).', 'error'); return; }
       if (!type) { App.toast('Type missing (shared).', 'error'); return; }
       if (!color) { App.toast('Color missing (shared).', 'error'); return; }
-      if (type === 'Shoe' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
+      if (type === 'Shoes' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
       if (!cost || !mrp) { App.toast('Wholesale Rate / MRP missing (shared).', 'error'); return; }
       if (mrp < cost) { App.toast('MRP cannot be less than Wholesale Rate.', 'error'); return; }
 
@@ -663,7 +667,7 @@ const Stock = (() => {
         if (!cat) { App.toast(`Category missing${lbl}.`, 'error'); return; }
         if (!type) { App.toast(`Type missing${lbl}.`, 'error'); return; }
         if (!color) { App.toast(`Color missing${lbl}.`, 'error'); return; }
-        if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${lbl}.`, 'error'); return; }
+        if (type === 'Shoes' && !shoeStyle) { App.toast(`Shoe Style missing${lbl}.`, 'error'); return; }
         if (!cost || !mrp) { App.toast(`Prices missing${lbl}.`, 'error'); return; }
         if (mrp < cost) { App.toast(`MRP < Wholesale Rate${lbl}.`, 'error'); return; }
 
@@ -825,7 +829,7 @@ const Stock = (() => {
     document.getElementById('se-cost-0').value = r[10] || '';
     document.getElementById('se-mrp-0').value = r[11] || '';
 
-    if (r[6] === 'Shoe') {
+    if (r[6] === 'Shoes') {
       document.getElementById('se-shoestyle-group-0').style.display = 'flex';
     }
 
@@ -895,6 +899,15 @@ const Stock = (() => {
             <div class="form-group">
               <label for="sell-modal-price">💸 Selling Price / pair (₹) *</label>
               <input type="number" id="sell-modal-price" placeholder="Enter selling price" min="0" step="1" style="border-color:var(--green);box-shadow:0 0 0 3px rgba(16,185,129,.12)" />
+            </div>
+          </div>
+
+          <!-- Payment Mode -->
+          <div style="margin-top:14px">
+            <label style="font-size:.8rem;color:var(--text2);font-weight:600;display:block;margin-bottom:8px">💳 Payment Mode</label>
+            <div class="payment-toggle" id="sell-modal-payment-toggle">
+              <button type="button" class="pay-btn active" data-mode="Cash" id="sell-pay-cash">💵 Cash</button>
+              <button type="button" class="pay-btn" data-mode="UPI" id="sell-pay-upi">📱 UPI</button>
             </div>
           </div>
 
@@ -968,12 +981,21 @@ const Stock = (() => {
       if (e.key === 'Enter') document.getElementById('sell-modal-confirm').click();
     });
 
+    // Payment mode toggle
+    document.querySelectorAll('#sell-modal-payment-toggle .pay-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#sell-modal-payment-toggle .pay-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
     // Confirm sale
     document.getElementById('sell-modal-confirm').addEventListener('click', async () => {
       const saleDate   = document.getElementById('sell-modal-date').value.trim();
       const saleTime   = document.getElementById('sell-modal-time').value.trim();
       const qtyToSell  = Number(document.getElementById('sell-modal-qty').value)   || 0;
       const sellPrice  = Number(document.getElementById('sell-modal-price').value) || 0;
+      const payMode    = document.querySelector('#sell-modal-payment-toggle .pay-btn.active')?.dataset.mode || 'Cash';
 
       // ── Validation ──
       if (!saleDate)             { App.toast('Please enter sale date.',                    'error'); return; }
@@ -988,12 +1010,12 @@ const Stock = (() => {
       const totalProfit = qtyToSell * profitPair;
       const discount    = mrpPrice - sellPrice;
 
-      // Sale row columns: Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount
+      // Sale row columns: Date,Time,Brand,Article,Size,Cat,Type,ShoeStyle,Color,PairsTxn,Qty,Cost,MRP,Sell,TotalSale,TotalCost,ProfitPair,TotalProfit,Discount,PaymentMode
       const saleRow = [
         saleDate, saleTime,
         r[2], r[3], r[4], r[5], r[6], r[7] || '', r[8],
         1, qtyToSell, costPrice, mrpPrice, sellPrice,
-        totalSale, totalCost, profitPair, totalProfit, discount
+        totalSale, totalCost, profitPair, totalProfit, discount, payMode
       ];
 
       const confirmBtn = document.getElementById('sell-modal-confirm');
@@ -1040,6 +1062,169 @@ const Stock = (() => {
         App.toast('Error saving sale: ' + err.message, 'error');
         confirmBtn.disabled = false;
         confirmBtn.textContent = '✅ Confirm Sale';
+      }
+    });
+  }
+
+  // ── Bulk / Loose Item Quick Entry Modal ─────────────────────
+  function showBulkQuickEntryModal() {
+    document.getElementById('bulk-quick-entry-overlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'bulk-quick-entry-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box" id="bulk-quick-entry-box" style="max-width:600px">
+        <div class="modal-header">
+          <div class="modal-title">⚡ Quick Entry — Loose / Bulk Items</div>
+          <button class="modal-close" id="bqe-close">✕</button>
+        </div>
+        <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+          <p style="color:var(--text2);font-size:.83rem;margin-bottom:16px;line-height:1.5">
+            For loose items — no brand or article needed. Just type, colour, sizes and rates.
+          </p>
+
+          <!-- Shared fields -->
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="form-group">
+              <label for="bqe-date">Date *</label>
+              <input type="date" id="bqe-date" />
+            </div>
+            <div class="form-group">
+              <label for="bqe-type">Type *</label>
+              <select id="bqe-type" required>
+                <option value="">Select type</option>
+                ${TYPES.map(t => `<option>${t}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bqe-category">Category *</label>
+              <select id="bqe-category" required>
+                <option value="">Select category</option>
+                ${CATS.map(c => `<option>${c}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bqe-color">Color *</label>
+              <input type="text" id="bqe-color" placeholder="e.g. Black, Brown, Navy" />
+            </div>
+            <div class="form-group">
+              <label for="bqe-cost">Wholesale Rate / pair (₹) *</label>
+              <input type="number" id="bqe-cost" placeholder="0" min="0" step="1" />
+            </div>
+            <div class="form-group">
+              <label for="bqe-mrp">MRP / pair (₹) *</label>
+              <input type="number" id="bqe-mrp" placeholder="0" min="0" step="1" />
+            </div>
+          </div>
+
+          <!-- Size rows -->
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span style="font-size:.85rem;font-weight:600;color:var(--text2)">📏 Sizes & Quantities</span>
+              <button type="button" class="btn btn-secondary btn-sm" id="bqe-add-size">+ Add Size</button>
+            </div>
+            <div id="bqe-sizes-container"></div>
+          </div>
+
+          <div class="form-actions" style="margin-top:20px">
+            <button type="button" class="btn btn-primary" id="bqe-save">💾 Save to Stock</button>
+            <button type="button" class="btn btn-secondary" id="bqe-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Pre-fill date
+    document.getElementById('bqe-date').value = getISTDateStr();
+
+    // Size rows
+    const sizesContainer = document.getElementById('bqe-sizes-container');
+    let sizeRowCount = 0;
+
+    function addSizeRow() {
+      const rowId = `bqe-size-row-${sizeRowCount++}`;
+      const div = document.createElement('div');
+      div.id = rowId;
+      div.style.cssText = 'display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)';
+      div.innerHTML = `
+        <div class="form-group" style="margin:0;flex:1;min-width:90px">
+          <label style="font-size:.75rem;margin-bottom:4px;display:block">Size *</label>
+          <input type="number" class="bqe-size-val" placeholder="6–12" min="1" max="15" style="width:100%" />
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:90px">
+          <label style="font-size:.75rem;margin-bottom:4px;display:block">Qty (pairs) *</label>
+          <input type="number" class="bqe-qty-val" placeholder="0" min="0" style="width:100%" />
+        </div>
+        <button type="button" class="bqe-del-size" data-row="${rowId}"
+          style="flex-shrink:0;background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.9rem;align-self:flex-end;margin-bottom:1px" title="Remove">✕</button>
+      `;
+      sizesContainer.appendChild(div);
+    }
+
+    // Event delegation for delete buttons
+    sizesContainer.addEventListener('click', function(e) {
+      const btn = e.target.closest('.bqe-del-size');
+      if (btn) document.getElementById(btn.dataset.row)?.remove();
+    });
+
+    // Start with 3 size rows
+    addSizeRow(); addSizeRow(); addSizeRow();
+
+    document.getElementById('bqe-add-size').addEventListener('click', addSizeRow);
+
+    const closeModal = () => overlay.remove();
+    document.getElementById('bqe-close').addEventListener('click', closeModal);
+    document.getElementById('bqe-cancel').addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    document.getElementById('bqe-save').addEventListener('click', async () => {
+      const date     = document.getElementById('bqe-date').value.trim();
+      const type     = document.getElementById('bqe-type').value;
+      const cat      = document.getElementById('bqe-category').value;
+      const color    = document.getElementById('bqe-color').value.trim();
+      const cost     = Number(document.getElementById('bqe-cost').value) || 0;
+      const mrp      = Number(document.getElementById('bqe-mrp').value)  || 0;
+      const time     = getISTTimeStr();
+
+      if (!date)  { App.toast('Please enter a date.', 'error'); return; }
+      if (!type)  { App.toast('Please select a type.', 'error'); return; }
+      if (!cat)   { App.toast('Please select a category.', 'error'); return; }
+      if (!color) { App.toast('Please enter a colour.', 'error'); return; }
+      if (!cost)  { App.toast('Please enter wholesale rate.', 'error'); return; }
+      if (!mrp)   { App.toast('Please enter MRP.', 'error'); return; }
+      if (mrp < cost) { App.toast('MRP cannot be less than wholesale rate.', 'error'); return; }
+
+      const sizeRows = sizesContainer.querySelectorAll('[id^="bqe-size-row-"]');
+      const entries = [];
+      let rowNum = 0;
+      for (const rowEl of sizeRows) {
+        rowNum++;
+        const sz  = rowEl.querySelector('.bqe-size-val')?.value.trim();
+        const qty = Number(rowEl.querySelector('.bqe-qty-val')?.value) || 0;
+        if (!sz)    { App.toast(`Size missing on row ${rowNum}.`, 'error'); return; }
+        if (qty < 0){ App.toast(`Qty invalid on row ${rowNum}.`, 'error'); return; }
+        // Date, Time, Brand, Article, Size, Category, Type, ShoeStyle, Color, Qty, Cost, MRP
+        entries.push([date, time, 'Loose', '—', Number(sz), cat, type, '', color, qty, cost, mrp]);
+      }
+
+      if (entries.length === 0) { App.toast('Add at least one size row.', 'error'); return; }
+
+      const saveBtn = document.getElementById('bqe-save');
+      saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+      try {
+        for (const row of entries) {
+          await API.addStock(row);
+          allRows.push(row);
+        }
+        App.toast(`${entries.length} loose item entr${entries.length > 1 ? 'ies' : 'y'} saved!`, 'success');
+        closeModal();
+        renderTable();
+      } catch (err) {
+        App.toast('Error: ' + err.message, 'error');
+      } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save to Stock'; }
       }
     });
   }

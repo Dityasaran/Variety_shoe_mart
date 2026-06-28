@@ -81,7 +81,7 @@ const App = (() => {
     });
 
     // Update topbar title
-    const titles = { dashboard: 'Dashboard', stock: 'Stock Management', sales: 'Sales Management', requirements: 'Order Requirements' };
+    const titles = { dashboard: 'Dashboard', stock: 'Stock Management', sales: 'Sales Management', requirements: 'Order Requirements & Credit' };
     document.getElementById('topbar-title').textContent = titles[view] || view;
 
     // Render view

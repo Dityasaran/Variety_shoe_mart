@@ -993,3 +993,103 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
 /* bg3 for textarea */
 :root { --bg3: #0D1526; }
 
+/* ── Payment Mode Toggle ──────────────────────────────────────── */
+.payment-toggle {
+  display: flex; gap: 0; border-radius: var(--radius-sm);
+  overflow: hidden; border: 1px solid var(--border);
+  width: fit-content;
+}
+.pay-btn {
+  padding: 8px 20px; font-size: .8rem; font-weight: 600;
+  color: var(--text3); background: var(--bg2);
+  border: none; cursor: pointer;
+  transition: all var(--transition);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center; gap: 5px;
+}
+.pay-btn:last-child { border-right: none; }
+.pay-btn.active {
+  background: linear-gradient(135deg, rgba(16,185,129,.25), rgba(16,185,129,.12));
+  color: var(--green); font-weight: 700;
+}
+.pay-btn[data-mode="UPI"].active {
+  background: linear-gradient(135deg, rgba(99,102,241,.25), rgba(99,102,241,.12));
+  color: #818cf8;
+}
+.pay-btn:hover:not(.active) {
+  background: var(--card2); color: var(--text);
+}
+
+/* ── Page tabs (Requirements / Credit) ───────────────────────── */
+.page-tabs {
+  display: flex; gap: 0; margin-bottom: 24px;
+  border-bottom: 2px solid var(--border);
+}
+.page-tab-btn {
+  padding: 10px 24px; font-size: .875rem; font-weight: 600;
+  color: var(--text3); background: none; border: none;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  cursor: pointer; transition: all var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.page-tab-btn:hover { color: var(--text); }
+.page-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Credit list items ────────────────────────────────────────── */
+.credit-list { display: flex; flex-direction: column; gap: 12px; }
+.credit-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius); padding: 16px 18px;
+  display: flex; align-items: flex-start; gap: 16px;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.credit-item:hover { border-color: var(--gold); transform: translateY(-1px); }
+.credit-item-body { flex: 1; min-width: 0; }
+.credit-item-top {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 8px;
+}
+.credit-item-name { font-weight: 700; font-size: .95rem; color: var(--text); }
+.credit-item-meta {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  font-size: .8rem; color: var(--text2); margin-bottom: 6px;
+}
+.credit-item-meta strong { color: var(--text); }
+.credit-item-owed {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.25);
+  color: var(--gold); font-weight: 700; font-size: .85rem;
+  padding: 4px 12px; border-radius: 20px; margin-top: 4px;
+}
+.credit-item-actions {
+  display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+.action-receive {
+  padding: 5px 12px; border-radius: 5px; font-size: .75rem; font-weight: 600;
+  background: rgba(245,158,11,.12); color: var(--gold);
+  border: 1px solid rgba(245,158,11,.25); transition: all var(--transition);
+}
+.action-receive:hover { background: rgba(245,158,11,.22); }
+
+/* ── Credit summary bar ─────────────────────────────────────── */
+.credit-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px; margin-bottom: 20px;
+}
+.credit-sum-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+  transition: transform var(--transition);
+}
+.credit-sum-card:hover { transform: translateY(-2px); }
+.credit-sum-card.gold { border-left: 4px solid var(--gold); }
+.credit-sum-card.red  { border-left: 4px solid var(--red); }
+.credit-sum-icon { font-size: 1.5rem; flex-shrink: 0; }
+.credit-sum-val { font-size: 1.25rem; font-weight: 800; color: var(--text); }
+.credit-sum-lbl { font-size: .68rem; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+.credit-sum-card.gold .credit-sum-val { color: var(--gold); }
+.credit-sum-card.red  .credit-sum-val { color: var(--red); }
+

@@ -13,8 +13,8 @@ const Sales = (() => {
   let editIndex = null;
 
   const CATS        = ['Men', 'Women', 'Kids'];
-  const TYPES       = ['Sandal', 'Shoe', 'Slipper', 'Sports', 'Crocs', 'Flip Flops', 'Socks'];
-  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
+  const TYPES       = ['Sandal', 'Shoes', 'Slipper', 'Crocs', 'Flip Flops', 'Socks'];
+  const SHOE_STYLES = ['Lace', 'Velcro', 'Buckle', 'Loafer', 'Sports', 'Formal Lace', 'Formal Laceless', 'Safety Shoe', 'Water Shoe', 'Laceless'];
   const inr         = n => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   // ── IST helpers ──────────────────────────────────────────
@@ -96,6 +96,13 @@ const Sales = (() => {
                 <option value="">How many pairs sold?</option>
                 ${[1,2,3,4,5,6,7].map(n => `<option value="${n}">${n} pair${n > 1 ? 's' : ''}</option>`).join('')}
               </select>
+            </div>
+            <div class="form-group">
+              <label style="font-size:.8rem;color:var(--text2);font-weight:600;display:block;margin-bottom:8px">💳 Payment Mode</label>
+              <div class="payment-toggle" id="sl-payment-toggle">
+                <button type="button" class="pay-btn active" data-mode="Cash" id="sl-pay-cash">💵 Cash</button>
+                <button type="button" class="pay-btn" data-mode="UPI" id="sl-pay-upi">📱 UPI</button>
+              </div>
             </div>
           </div>
 
@@ -183,7 +190,7 @@ const Sales = (() => {
                 <th>Size</th><th>Cat.</th><th>Type</th><th>Style</th><th>Color</th>
                 <th>Pairs/Txn</th><th>Qty</th><th>Wholesale Rate</th><th>MRP</th>
                 <th>Sell Price</th><th>Total Sale</th><th>Total Wholesale Value</th>
-                <th>Profit/Pair</th><th>Total Profit</th><th>Discount</th><th>Actions</th>
+                <th>Profit/Pair</th><th>Total Profit</th><th>Discount</th><th>Payment</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="sales-tbody"></tbody>
@@ -218,6 +225,14 @@ const Sales = (() => {
     document.getElementById('sale-cancel-btn').addEventListener('click', () => showForm(false));
     document.getElementById('sale-form').addEventListener('submit', handleSubmit);
     document.getElementById('quick-entry-btn').addEventListener('click', showQuickEntryModal);
+
+    // Payment toggle in sale form
+    document.getElementById('sl-payment-toggle')?.querySelectorAll('.pay-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#sl-payment-toggle .pay-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
 
     document.getElementById('ff-search').addEventListener('input', renderTable);
     document.getElementById('ff-category').addEventListener('change', renderTable);
@@ -361,7 +376,7 @@ const Sales = (() => {
     set(`sl-cost-${i}`,     d.cost);
     set(`sl-mrp-${i}`,      d.mrp);
     set(`sl-sell-${i}`,     d.sell);
-    if (d.type === 'Shoe') {
+    if (d.type === 'Shoes') {
       const sg = document.getElementById(`sl-shoestyle-group-${i}`);
       if (sg) sg.style.display = 'flex';
     }
@@ -378,7 +393,7 @@ const Sales = (() => {
     set('sl-shared-cost',     d.cost);
     set('sl-shared-mrp',      d.mrp);
     set('sl-shared-sell',     d.sell);
-    if (d.type === 'Shoe') {
+    if (d.type === 'Shoes') {
       const sg = document.getElementById('sl-shared-shoestyle-group');
       if (sg) sg.style.display = 'flex';
     }
@@ -496,8 +511,8 @@ const Sales = (() => {
     // Show/hide shoe style
     document.getElementById('sl-shared-type')?.addEventListener('change', function () {
       const sg = document.getElementById('sl-shared-shoestyle-group');
-      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-      if (this.value !== 'Shoe') document.getElementById('sl-shared-shoestyle').value = '';
+      sg.style.display = this.value === 'Shoes' ? 'flex' : 'none';
+      if (this.value !== 'Shoes') document.getElementById('sl-shared-shoestyle').value = '';
       updateSameModeCalc(n);
     });
 
@@ -681,8 +696,8 @@ const Sales = (() => {
   function attachDifferentModeListeners(i, n) {
     document.getElementById(`sl-type-${i}`)?.addEventListener('change', function () {
       const sg = document.getElementById(`sl-shoestyle-group-${i}`);
-      sg.style.display = this.value === 'Shoe' ? 'flex' : 'none';
-      if (this.value !== 'Shoe') document.getElementById(`sl-shoestyle-${i}`).value = '';
+      sg.style.display = this.value === 'Shoes' ? 'flex' : 'none';
+      if (this.value !== 'Shoes') document.getElementById(`sl-shoestyle-${i}`).value = '';
     });
 
     [`sl-qty-${i}`, `sl-cost-${i}`, `sl-mrp-${i}`, `sl-sell-${i}`].forEach(id =>
@@ -770,6 +785,7 @@ const Sales = (() => {
     const date     = document.getElementById('sl-date').value.trim();
     const time     = document.getElementById('sl-time').value.trim();
     const pairsTxn = Number(document.getElementById('sl-pairs-txn').value) || 0;
+    const payMode  = document.querySelector('#sl-payment-toggle .pay-btn.active')?.dataset.mode || 'Cash';
 
     if (!date || !time)   { App.toast('Please fill in Date and Time.', 'error'); return; }
     if (!pairsTxn)        { App.toast('Please select number of pairs.', 'error'); return; }
@@ -792,7 +808,7 @@ const Sales = (() => {
       if (!article) { App.toast('Article missing (shared).', 'error'); return; }
       if (!cat)     { App.toast('Category missing (shared).', 'error'); return; }
       if (!type)    { App.toast('Type missing (shared).', 'error'); return; }
-      if (type === 'Shoe' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
+      if (type === 'Shoes' && !shoeStyle) { App.toast('Shoe Style missing (shared).', 'error'); return; }
       if (!cost || !mrp || !sell) { App.toast('Prices missing (shared).', 'error'); return; }
       if (sell > mrp) { App.toast('Selling price > MRP (shared).', 'error'); return; }
 
@@ -814,7 +830,7 @@ const Sales = (() => {
         pairRows.push([
           date, time, brand, article, Number(size), cat, type, shoeStyle, color,
           pairsTxn, qty, cost, mrp, sell,
-          totalSale, totalCost, profitPair, totalProfit, discount
+          totalSale, totalCost, profitPair, totalProfit, discount, payMode
         ]);
       }
     } else {
@@ -841,7 +857,7 @@ const Sales = (() => {
         if (!color)   { App.toast(`Color missing${label}.`,   'error'); return; }
         if (qty < 1)  { App.toast(`Qty must be ≥ 1${label}.`,'error'); return; }
         if (!cost || !mrp || !sell) { App.toast(`Prices missing${label}.`, 'error'); return; }
-        if (type === 'Shoe' && !shoeStyle) { App.toast(`Shoe Style missing${label}.`, 'error'); return; }
+        if (type === 'Shoes' && !shoeStyle) { App.toast(`Shoe Style missing${label}.`, 'error'); return; }
         if (sell > mrp) { App.toast(`Selling price > MRP${label}.`, 'error'); return; }
 
         const totalSale   = qty * sell;
@@ -853,7 +869,7 @@ const Sales = (() => {
         pairRows.push([
           date, time, brand, article, Number(size), cat, type, shoeStyle, color,
           pairsTxn, qty, cost, mrp, sell,
-          totalSale, totalCost, profitPair, totalProfit, discount
+          totalSale, totalCost, profitPair, totalProfit, discount, payMode
         ]);
       }
     }
@@ -913,7 +929,7 @@ const Sales = (() => {
     const tfoot = document.getElementById('sales-tfoot');
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="21"><div class="empty-state"><div class="empty-icon">🛒</div><p>No sales records found</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="22"><div class="empty-state"><div class="empty-icon">🛒</div><p>No sales records found</p></div></td></tr>`;
       tfoot.innerHTML = '';
       return;
     }
@@ -923,6 +939,10 @@ const Sales = (() => {
       const profit  = Number(r[17]) || 0;
       const profCol = profit >= 0 ? 'var(--green)' : 'var(--red)';
       const styleCell = r[7] ? `<span class="badge badge-gold">${r[7]}</span>` : '<span style="color:var(--text3)">—</span>';
+      const payMode = r[19] || 'Cash';
+      const payBadge = payMode === 'UPI'
+        ? `<span class="badge" style="background:rgba(99,102,241,.18);color:#818cf8">📱 UPI</span>`
+        : `<span class="badge" style="background:rgba(16,185,129,.15);color:#10b981">💵 Cash</span>`;
       return `
         <tr>
           <td>${fi + 1}</td>
@@ -945,6 +965,7 @@ const Sales = (() => {
           <td>₹${Number(r[16]||0).toLocaleString('en-IN')}</td>
           <td style="color:${profCol};font-weight:700">₹${profit.toLocaleString('en-IN')}</td>
           <td>₹${Number(r[18]||0).toLocaleString('en-IN')}</td>
+          <td>${payBadge}</td>
           <td>
             <div class="action-btns">
               <button class="action-edit" onclick="Sales.edit(${origIdx})">Edit</button>
@@ -965,7 +986,7 @@ const Sales = (() => {
         <td>${inr(totCost)}</td>
         <td>—</td>
         <td>${inr(totProfit)}</td>
-        <td colspan="2">—</td>
+        <td colspan="3">—</td>
       </tr>`;
   }
 
@@ -1004,7 +1025,7 @@ const Sales = (() => {
     document.getElementById('sl-mrp-0').value        = r[12] || '';
     document.getElementById('sl-sell-0').value       = r[13] || '';
 
-    if (r[6] === 'Shoe') {
+    if (r[6] === 'Shoes') {
       document.getElementById('sl-shoestyle-group-0').style.display = 'flex';
     }
 

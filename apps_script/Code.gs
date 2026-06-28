@@ -16,7 +16,8 @@ const SALES_HEADERS = [
   'Date', 'Time', 'Brand', 'Article/Model', 'Size', 'Category', 'Type',
   'Shoe Style', 'Color', 'Pairs in Transaction', 'Qty Sold',
   'Cost Price (INR)', 'MRP (INR)', 'Selling Price (INR)',
-  'Total Sale Amount', 'Total Cost', 'Profit/Pair', 'Total Profit', 'Discount Given'
+  'Total Sale Amount', 'Total Cost', 'Profit/Pair', 'Total Profit', 'Discount Given',
+  'Payment Mode'
 ];
 
 // ── Format any cell value returned by getValues() into a clean type ─
